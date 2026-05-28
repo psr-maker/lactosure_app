@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:lactosure_connect_app/lactosure/authen/register.dart';
 import 'package:lactosure_connect_app/lactosure/splash.dart';
 
 void main() async {
@@ -17,7 +16,6 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       home: const SplashScreen(),
-      // home: const RegisterUser(),
     );
   }
 }

@@ -1,24 +1,53 @@
 import 'package:flutter/material.dart';
-import 'package:lactosure_connect_app/lactosure/authen/forget_pw.dart';
-import 'package:lactosure_connect_app/lactosure/authen/register.dart';
-import 'package:lactosure_connect_app/lactosure/screens/admin/admin.dart';
-import 'package:lactosure_connect_app/lactosure/screens/home.dart';
+import 'package:lactosure_connect_app/lactosure/screens/authen/otp_verify.dart';
 import 'package:lactosure_connect_app/lactosure/widgets/custom_button.dart';
 import 'package:lactosure_connect_app/lactosure/widgets/custom_textfield.dart';
 import 'package:lactosure_connect_app/services/authen_service.dart';
 
-class LoginPage extends StatefulWidget {
-  const LoginPage({super.key});
+class RegisterUser extends StatefulWidget {
+  const RegisterUser({super.key});
 
   @override
-  State<LoginPage> createState() => _LoginPageState();
+  State<RegisterUser> createState() => _RegisterUserState();
 }
 
-class _LoginPageState extends State<LoginPage> {
+class _RegisterUserState extends State<RegisterUser> {
+  final nameController = TextEditingController();
   final emailController = TextEditingController();
   final passwordController = TextEditingController();
 
   final _formKey = GlobalKey<FormState>();
+  bool _isLoading = false;
+  Future<void> register() async {
+    setState(() {
+      _isLoading = true;
+    });
+    final result = await AuthService.registerUser(
+      name: nameController.text.trim(),
+      email: emailController.text.trim(),
+      password: passwordController.text.trim(),
+    );
+    setState(() {
+      _isLoading = false;
+    });
+
+    if (result["success"]) {
+      CustomSnackbar.show(context: context, message: result["message"]);
+
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => OtpVerify(email: emailController.text),
+        ),
+      );
+    } else {
+      CustomSnackbar.show(
+        context: context,
+        message: result["message"],
+        isError: true,
+      );
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -37,19 +66,17 @@ class _LoginPageState extends State<LoginPage> {
             end: Alignment.bottomRight,
           ),
         ),
-
         child: SingleChildScrollView(
           child: Padding(
             padding: const EdgeInsets.all(20),
-
             child: Form(
               key: _formKey,
               child: Column(
                 children: [
-                  const SizedBox(height: 70),
+                  const SizedBox(height: 80),
 
                   const Text(
-                    "Welcome Back",
+                    "Create Account",
                     style: TextStyle(
                       fontSize: 30,
                       fontWeight: FontWeight.bold,
@@ -60,7 +87,7 @@ class _LoginPageState extends State<LoginPage> {
                   const SizedBox(height: 10),
 
                   const Text(
-                    "Login to continue",
+                    "Register to continue",
                     style: TextStyle(
                       fontSize: 13,
                       color: Colors.white70,
@@ -68,7 +95,22 @@ class _LoginPageState extends State<LoginPage> {
                     ),
                   ),
 
-                  const SizedBox(height: 50),
+                  const SizedBox(height: 40),
+
+                  /// NAME
+                  CustomTextField(
+                    hintText: "Full Name",
+                    prefixIcon: Icons.person,
+                    controller: nameController,
+                    validator: (value) {
+                      if (value == null || value.isEmpty) {
+                        return "Enter your name";
+                      }
+                      return null;
+                    },
+                  ),
+
+                  const SizedBox(height: 20),
 
                   /// EMAIL
                   CustomTextField(
@@ -99,96 +141,38 @@ class _LoginPageState extends State<LoginPage> {
                     },
                   ),
 
-                  const SizedBox(height: 10),
+                  const SizedBox(height: 30),
 
-                  /// FORGOT PASSWORD
-                  Align(
-                    alignment: Alignment.centerRight,
-                    child: TextButton(
-                      onPressed: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) => const ForgetPassword(),
-                          ),
-                        );
-                      },
-                      child: const Text(
-                        "Forgot Password?",
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: Color.fromARGB(255, 255, 157, 10),
-                        ),
-                      ),
-                    ),
-                  ),
-
-                  const SizedBox(height: 20),
-
-                  /// LOGIN BUTTON
+                  /// REGISTER BUTTON
                   CustomButton(
-                    text: "Login",
-                    onPressed: () async {
+                    text: "Register",
+                    isLoading: _isLoading,
+                    onPressed: () {
                       if (_formKey.currentState!.validate()) {
-                        final result = await AuthService.loginUser(
-                          emailController.text,
-                          passwordController.text,
-                        );
-
-                        if (result["success"]) {
-                          String email = result["email"];
-
-                          // Admin
-                          if (email.toLowerCase() == "directorbugstest404@gmail.com") {
-                            Navigator.pushReplacement(
-                              context,
-                              MaterialPageRoute(
-                                builder: (_) => const Adminpage(),
-                              ),
-                            );
-                          }
-                          // User
-                          else {
-                            Navigator.pushReplacement(
-                              context,
-                              MaterialPageRoute(
-                                builder: (_) => const Corrections(),
-                              ),
-                            );
-                          }
-                        } else {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(content: Text(result["message"])),
-                          );
-                        }
+                        register();
                       }
                     },
-                    buttonclr: const Color.fromARGB(255, 255, 157, 10),
+                    buttonclr: Color.fromARGB(255, 255, 157, 10),
                     txtclr: Colors.white,
                   ),
 
                   const SizedBox(height: 25),
 
-                  /// REGISTER
+                  /// LOGIN OPTION
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       const Text(
-                        "Don't have an account?",
+                        "Already have an account?",
                         style: TextStyle(color: Colors.white),
                       ),
 
                       TextButton(
                         onPressed: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) => const RegisterUser(),
-                            ),
-                          );
+                          Navigator.pop(context);
                         },
                         child: const Text(
-                          "Register",
+                          "Login",
                           style: TextStyle(
                             color: Color.fromARGB(255, 255, 157, 10),
                           ),

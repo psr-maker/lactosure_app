@@ -5,6 +5,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 class AuthService {
   static const String url = Api.baseUrl;
+
   static Future<Map<String, dynamic>> registerUser({
     required String name,
     required String email,
@@ -129,7 +130,6 @@ class AuthService {
     }
   }
 
-  // ================= GET ALL USERS =================
   static Future<List<dynamic>> getAllUsers() async {
     final response = await http.get(
       Uri.parse('$url/auth/all-users'),
@@ -143,7 +143,6 @@ class AuthService {
     }
   }
 
-  // ================= APPROVE USER =================
   static Future<bool> approveUser(int id) async {
     final response = await http.put(
       Uri.parse('$url/auth/approve-user/$id'),
@@ -153,7 +152,6 @@ class AuthService {
     return response.statusCode == 200;
   }
 
-  // ================= REJECT USER =================
   static Future<bool> rejectUser(int id) async {
     final response = await http.delete(
       Uri.parse('$url/auth/reject-user/$id'),
@@ -163,54 +161,91 @@ class AuthService {
     return response.statusCode == 200;
   }
 
-  // ================= SEND FORGOT OTP =================
-  static Future<bool> forgotPasswordSendOtp(String email) async {
-    final response = await http.post(
-      Uri.parse('$url/auth/forgot-password-send-otp'),
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: jsonEncode(email),
-    );
+  static Future<Map<String, dynamic>> forgotPasswordSendOtp(
+    String email,
+  ) async {
+    try {
+      final response = await http.post(
+        Uri.parse('$url/auth/forgot-password-send-otp'),
 
-    return response.statusCode == 200;
+        headers: {"Content-Type": "application/json"},
+        body: jsonEncode(email),
+      );
+
+      final data = jsonDecode(response.body);
+
+      if (response.statusCode == 200) {
+        return {
+          "success": true,
+          "message": data["message"] ?? "OTP sent successfully",
+        };
+      } else {
+        return {
+          "success": false,
+          "message": data["message"] ?? "Failed to send OTP",
+        };
+      }
+    } catch (e) {
+      return {"success": false, "message": "Something went wrong"};
+    }
   }
 
-  // ================= VERIFY FORGOT OTP =================
-  static Future<bool> forgotPasswordVerifyOtp(
+  static Future<Map<String, dynamic>> forgotPasswordVerifyOtp(
     String email,
     String otp,
   ) async {
-    final response = await http.post(
-      Uri.parse('$url/auth/forgot-password-verify-otp'),
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: jsonEncode({
-        "email": email,
-        "otp": otp,
-      }),
-    );
+    try {
+      final response = await http.post(
+        Uri.parse('$url/auth/forgot-password-verify-otp'),
 
-    return response.statusCode == 200;
+        headers: {"Content-Type": "application/json"},
+
+        body: jsonEncode({"email": email, "otp": otp}),
+      );
+
+      final data = jsonDecode(response.body);
+
+      if (response.statusCode == 200) {
+        return {
+          "success": true,
+          "message": data["message"] ?? "OTP verified successfully",
+        };
+      } else {
+        return {"success": false, "message": data["message"] ?? "Invalid OTP"};
+      }
+    } catch (e) {
+      return {"success": false, "message": "Something went wrong"};
+    }
   }
 
-  // ================= CHANGE PASSWORD =================
-  static Future<bool> changePassword(
+  static Future<Map<String, dynamic>> changePassword(
     String email,
     String password,
   ) async {
-    final response = await http.put(
-      Uri.parse('$url/auth/change-password'),
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: jsonEncode({
-        "email": email,
-        "password": password,
-      }),
-    );
+    try {
+      final response = await http.put(
+        Uri.parse('$url/auth/change-password'),
 
-    return response.statusCode == 200;
+        headers: {"Content-Type": "application/json"},
+
+        body: jsonEncode({"email": email, "password": password}),
+      );
+
+      final data = jsonDecode(response.body);
+
+      if (response.statusCode == 200) {
+        return {
+          "success": true,
+          "message": data["message"] ?? "Password updated successfully",
+        };
+      } else {
+        return {
+          "success": false,
+          "message": data["message"] ?? "Failed to update password",
+        };
+      }
+    } catch (e) {
+      return {"success": false, "message": e.toString()};
+    }
   }
 }

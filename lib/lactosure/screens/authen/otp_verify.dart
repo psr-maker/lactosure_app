@@ -2,7 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:lactosure_connect_app/lactosure/authen/login.dart';
+import 'package:lactosure_connect_app/lactosure/screens/authen/login.dart';
 import 'package:lactosure_connect_app/lactosure/widgets/custom_button.dart';
 import 'package:lactosure_connect_app/services/authen_service.dart';
 
@@ -29,36 +29,40 @@ class _OtpVerifyState extends State<OtpVerify> {
   int maxResend = 3;
 
   bool canResend = true;
-
+  bool _isLoading = false;
   @override
   void initState() {
     super.initState();
     startTimer();
   }
 
- void startTimer() {
-  timer?.cancel();
+  void startTimer() {
+    timer?.cancel();
 
-  secondsRemaining = 300;
-  canResend = false;
+    setState(() {
+      secondsRemaining = 300;
+      canResend = false;
+    });
 
-  timer = Timer.periodic(const Duration(seconds: 1), (timer) {
-    if (secondsRemaining > 0) {
-      setState(() {
-        secondsRemaining--;
-      });
-    } else {
-      timer.cancel();
+    timer = Timer.periodic(const Duration(seconds: 1), (Timer t) {
+      if (!mounted) {
+        t.cancel();
+        return;
+      }
 
-      // allow resend only if limit not reached
-      if (resendCount < maxResend) {
+      if (secondsRemaining > 0) {
         setState(() {
-          canResend = true;
+          secondsRemaining--;
+        });
+      } else {
+        t.cancel();
+
+        setState(() {
+          canResend = resendCount < maxResend;
         });
       }
-    }
-  });
-}
+    });
+  }
 
   String get timerText {
     int minutes = secondsRemaining ~/ 60;
@@ -76,16 +80,22 @@ class _OtpVerifyState extends State<OtpVerify> {
         message: "Enter complete OTP",
         isError: true,
       );
-
       return;
     }
 
+    setState(() {
+      _isLoading = true;
+    });
+
     final result = await AuthService.verifyOtp(email: widget.email, otp: otp);
+
+    setState(() {
+      _isLoading = false;
+    });
 
     if (result["success"]) {
       CustomSnackbar.show(context: context, message: result["message"]);
 
-      // navigate login/home
       Navigator.push(context, MaterialPageRoute(builder: (_) => LoginPage()));
     } else {
       CustomSnackbar.show(
@@ -97,27 +107,24 @@ class _OtpVerifyState extends State<OtpVerify> {
   }
 
   Future<void> resendOtp() async {
-  final response = await AuthService.resendOtp(email: widget.email);
+    final response = await AuthService.resendOtp(email: widget.email);
 
-  if (response["success"]) {
-    setState(() {
-      resendCount = response["resendCount"];
-      canResend = false;
+    if (response["success"]) {
+      setState(() {
+        resendCount = response["resendCount"] ?? 0;
+      });
+
       startTimer();
-    });
 
-    CustomSnackbar.show(
-      context: context,
-      message: "OTP resent successfully",
-    );
-  } else {
-    CustomSnackbar.show(
-      context: context,
-      message: response["message"],
-      isError: true,
-    );
+      CustomSnackbar.show(context: context, message: "OTP resent successfully");
+    } else {
+      CustomSnackbar.show(
+        context: context,
+        message: response["message"],
+        isError: true,
+      );
+    }
   }
-}
 
   @override
   void dispose() {
@@ -242,16 +249,14 @@ class _OtpVerifyState extends State<OtpVerify> {
 
                 /// RESEND OTP
                 TextButton(
-                  onPressed: secondsRemaining == 0
+                  onPressed: canResend
                       ? () {
                           resendOtp();
                         }
                       : null,
 
                   child: Text(
-                    secondsRemaining == 0
-                        ? "Resend OTP"
-                        : "Resend available after timer",
+                    canResend ? "Resend OTP" : "Resend available after timer",
                     style: const TextStyle(
                       fontSize: 13,
                       fontWeight: FontWeight.bold,
@@ -265,11 +270,9 @@ class _OtpVerifyState extends State<OtpVerify> {
                 /// VERIFY BUTTON
                 CustomButton(
                   text: "Verify OTP",
-                  onPressed: () {
-                    verifyOtp();
-                  },
-
-                  buttonclr: Color.fromARGB(255, 255, 157, 10),
+                  isLoading: _isLoading,
+                  onPressed: verifyOtp,
+                  buttonclr: const Color.fromARGB(255, 255, 157, 10),
                   txtclr: Colors.white,
                 ),
               ],

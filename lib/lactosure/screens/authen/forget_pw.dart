@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:lactosure_connect_app/lactosure/authen/forget_otp.dart';
+import 'package:lactosure_connect_app/lactosure/screens/authen/forget_otp.dart';
 import 'package:lactosure_connect_app/lactosure/widgets/custom_button.dart';
 import 'package:lactosure_connect_app/lactosure/widgets/custom_textfield.dart';
 import 'package:lactosure_connect_app/services/authen_service.dart';
@@ -15,7 +15,7 @@ class _ForgetPasswordState extends State<ForgetPassword> {
   final emailController = TextEditingController();
 
   final formKey = GlobalKey<FormState>();
-
+  bool _isLoading = false;
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -83,11 +83,24 @@ class _ForgetPasswordState extends State<ForgetPassword> {
 
                     onPressed: () async {
                       if (formKey.currentState!.validate()) {
-                        bool success = await AuthService.forgotPasswordSendOtp(
+                        setState(() {
+                          _isLoading = true;
+                        });
+
+                        final result = await AuthService.forgotPasswordSendOtp(
                           emailController.text,
                         );
 
-                        if (success) {
+                        setState(() {
+                          _isLoading = false;
+                        });
+
+                        if (result["success"]) {
+                          CustomSnackbar.show(
+                            context: context,
+                            message: result["message"],
+                          );
+
                           Navigator.push(
                             context,
                             MaterialPageRoute(
@@ -96,8 +109,10 @@ class _ForgetPasswordState extends State<ForgetPassword> {
                             ),
                           );
                         } else {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(content: Text("Failed to send OTP")),
+                          CustomSnackbar.show(
+                            context: context,
+                            message: result["message"],
+                            isError: true,
                           );
                         }
                       }
@@ -105,6 +120,7 @@ class _ForgetPasswordState extends State<ForgetPassword> {
 
                     buttonclr: const Color.fromARGB(255, 255, 157, 10),
                     txtclr: Colors.white,
+                    isLoading: _isLoading,
                   ),
                 ],
               ),

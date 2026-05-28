@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:lactosure_connect_app/constant/token_check.dart';
-import 'package:lactosure_connect_app/lactosure/authen/login.dart';
-import 'package:lactosure_connect_app/lactosure/screens/admin/admin.dart';
+import 'package:lactosure_connect_app/lactosure/screens/authen/login.dart';
+import 'package:lactosure_connect_app/lactosure/admin/admin.dart';
 import 'package:lactosure_connect_app/lactosure/screens/home.dart';
 
 class SplashScreen extends StatefulWidget {
@@ -45,7 +45,7 @@ class _SplashScreenState extends State<SplashScreen>
 
       // Admin
       if (email != null &&
-          email.toLowerCase() == "directorbugstest404@gmail.com") {
+          email.toLowerCase() == "admin") {
 
         Navigator.pushReplacement(
           context,

@@ -2,7 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:lactosure_connect_app/lactosure/authen/change_pw.dart';
+import 'package:lactosure_connect_app/lactosure/screens/authen/change_pw.dart';
 import 'package:lactosure_connect_app/lactosure/widgets/custom_button.dart';
 import 'package:lactosure_connect_app/services/authen_service.dart';
 
@@ -24,7 +24,7 @@ class _ForgetOtpState extends State<ForgetOtp> {
   int secondsRemaining = 300;
 
   Timer? timer;
-
+  bool _isLoading = false;
   @override
   void initState() {
     super.initState();
@@ -202,12 +202,25 @@ class _ForgetOtpState extends State<ForgetOtp> {
                   onPressed: () async {
                     String otp = controllers.map((e) => e.text).join();
 
-                    bool success = await AuthService.forgotPasswordVerifyOtp(
+                    setState(() {
+                      _isLoading = true;
+                    });
+
+                    final result = await AuthService.forgotPasswordVerifyOtp(
                       widget.email,
                       otp,
                     );
 
-                    if (success) {
+                    setState(() {
+                      _isLoading = false;
+                    });
+
+                    if (result["success"]) {
+                      CustomSnackbar.show(
+                        context: context,
+                        message: result["message"],
+                      );
+
                       Navigator.pushReplacement(
                         context,
                         MaterialPageRoute(
@@ -215,13 +228,17 @@ class _ForgetOtpState extends State<ForgetOtp> {
                         ),
                       );
                     } else {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text("Invalid OTP")),
+                      CustomSnackbar.show(
+                        context: context,
+                        message: result["message"],
+                        isError: true,
                       );
                     }
                   },
+
                   buttonclr: const Color.fromARGB(255, 255, 157, 10),
                   txtclr: Colors.white,
+                  isLoading: _isLoading,
                 ),
               ],
             ),
