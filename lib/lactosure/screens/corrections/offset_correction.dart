@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
+import 'package:lactosure_connect_app/lactosure/screens/corrections/easy_correction.dart';
 
 class OffsetCorrection extends StatefulWidget {
   final BluetoothDevice device;
@@ -590,29 +591,10 @@ class _OffsetCorrectionState extends State<OffsetCorrection> {
               _buildOffsetFields(),
               const SizedBox(height: 50),
               _submitButton(),
-            ],
-
+            ]
             /// Easy Correction UI
-            if (selectedTab == 1) ...[
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.all(20),
-                decoration: BoxDecoration(
-                  color: Colors.green.shade50,
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: Colors.green),
-                ),
-                child: const Center(
-                  child: Text(
-                    "Easy Correction Selected",
-                    style: TextStyle(
-                      fontSize: 22,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.green,
-                    ),
-                  ),
-                ),
-              ),
+            else ...[
+              EasyCorrection(device: widget.device),
             ],
           ],
         ),

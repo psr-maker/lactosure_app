@@ -104,9 +104,9 @@ class _ScannerPageState extends State<ScannerPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      //  backgroundColor: const Color.fromARGB(255, 43, 47, 104),
+      // backgroundColor: const Color(0xFF0F172A),
       appBar: AppBar(
-        //  backgroundColor: const Color.fromARGB(255, 43, 47, 104),
+        // backgroundColor: const Color(0xFF1E293B),
         title: const Text(
           "BLE Scanner",
           style: const TextStyle(
@@ -157,6 +157,12 @@ class _ScannerPageState extends State<ScannerPage> {
                       ),
                       trailing: ElevatedButton(
                         onPressed: () => connectDevice(device),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.orange,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(15),
+                          ),
+                        ),
                         child: const Text(
                           "Connect",
                           style: const TextStyle(

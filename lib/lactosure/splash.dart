@@ -19,73 +19,51 @@ class _SplashScreenState extends State<SplashScreen>
   void initState() {
     super.initState();
 
-    _controller = AnimationController(
-      vsync: this,
-      duration: const Duration(seconds: 2),
-    )..repeat();
-
-    checkLogin();
+    Future.delayed(const Duration(seconds: 5), () {
+      checkLogin();
+    });
   }
 
- void checkLogin() async {
+  void checkLogin() async {
+    await Future.delayed(const Duration(seconds: 2));
 
-  await Future.delayed(const Duration(seconds: 2));
-
-  try {
-
-    bool loggedIn = await TokenCheck.isLoggedIn();
-
-    if (!mounted) return;
-
-    if (loggedIn) {
-
-      String? email = await TokenCheck.getEmail();
+    try {
+      bool loggedIn = await TokenCheck.isLoggedIn();
 
       if (!mounted) return;
 
-      // Admin
-      if (email != null &&
-          email.toLowerCase() == "admin") {
+      if (loggedIn) {
+        String? email = await TokenCheck.getEmail();
 
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(
-            builder: (_) => const Adminpage(),
-          ),
-        );
+        if (!mounted) return;
 
+        // Admin
+        if (email != null && email.toLowerCase() == "admin") {
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (_) => const Adminpage()),
+          );
+        } else {
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (_) => const ScannerPage()),
+          );
+        }
       } else {
-
         Navigator.pushReplacement(
           context,
-          MaterialPageRoute(
-            builder: (_) => const ScannerPage(),
-          ),
+          MaterialPageRoute(builder: (_) => const LoginPage()),
         );
       }
-
-    } else {
+    } catch (e) {
+      print("Splash Error: $e");
 
       Navigator.pushReplacement(
         context,
-        MaterialPageRoute(
-          builder: (_) => const LoginPage(),
-        ),
+        MaterialPageRoute(builder: (_) => const LoginPage()),
       );
     }
-
-  } catch (e) {
-
-    print("Splash Error: $e");
-
-    Navigator.pushReplacement(
-      context,
-      MaterialPageRoute(
-        builder: (_) => const LoginPage(),
-      ),
-    );
   }
-}
 
   @override
   void dispose() {
@@ -96,16 +74,13 @@ class _SplashScreenState extends State<SplashScreen>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color.fromARGB(255, 31, 26, 75),
+      backgroundColor: Colors.white,
       body: Center(
-        child: RotationTransition(
-          turns: _controller,
-          child: Image.asset(
-            'assets/flower.png',
-            width: 80,
-            height: 80,
-            fit: BoxFit.contain,
-          ),
+        child: Image.asset(
+          'assets/psrlogo.png',
+          width: 180,
+          height: 180,
+          fit: BoxFit.contain,
         ),
       ),
     );
