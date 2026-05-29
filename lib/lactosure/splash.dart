@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:lactosure_connect_app/constant/token_check.dart';
 import 'package:lactosure_connect_app/lactosure/screens/authen/login.dart';
 import 'package:lactosure_connect_app/lactosure/admin/admin.dart';
-import 'package:lactosure_connect_app/lactosure/screens/home.dart';
+import 'package:lactosure_connect_app/lactosure/screens/scanner.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -59,7 +59,7 @@ class _SplashScreenState extends State<SplashScreen>
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(
-            builder: (_) => const Corrections(),
+            builder: (_) => const ScannerPage(),
           ),
         );
       }

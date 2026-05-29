@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 import 'package:lactosure_connect_app/lactosure/screens/corrections/offset_correction.dart';
 
 class Corrections extends StatefulWidget {
-  const Corrections({super.key});
+  final BluetoothDevice device;
+  const Corrections({super.key, required this.device});
 
   @override
   State<Corrections> createState() => _CorrectionsState();
@@ -25,7 +27,8 @@ class _CorrectionsState extends State<Corrections> {
                   Navigator.push(
                     context,
                     MaterialPageRoute(
-                      builder: (context) => const OffsetCorrection(),
+                      builder: (context) =>
+                          OffsetCorrection(device: widget.device),
                     ),
                   );
                 },
