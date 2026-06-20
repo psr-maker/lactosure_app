@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:lactosure_connect_app/lactosure/admin/adminscren.dart';
 import 'package:lactosure_connect_app/lactosure/screens/authen/forget_pw.dart';
 import 'package:lactosure_connect_app/lactosure/screens/authen/register.dart';
-import 'package:lactosure_connect_app/lactosure/admin/admin.dart';
-import 'package:lactosure_connect_app/lactosure/screens/scanner.dart';
+import 'package:lactosure_connect_app/lactosure/screens/home.dart';
 import 'package:lactosure_connect_app/lactosure/widgets/custom_button.dart';
 import 'package:lactosure_connect_app/lactosure/widgets/custom_textfield.dart';
 import 'package:lactosure_connect_app/services/authen_service.dart';
@@ -149,7 +149,7 @@ class _LoginPageState extends State<LoginPage> {
                             Navigator.pushReplacement(
                               context,
                               MaterialPageRoute(
-                                builder: (_) => const Adminpage(),
+                                builder: (_) => const AdminScreen(),
                               ),
                             );
                           }
@@ -158,7 +158,7 @@ class _LoginPageState extends State<LoginPage> {
                             Navigator.pushReplacement(
                               context,
                               MaterialPageRoute(
-                                builder: (_) => const ScannerPage(),
+                                builder: (_) => const Dashboardhome(),
                               ),
                             );
                           }

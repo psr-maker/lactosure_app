@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:lactosure_connect_app/constant/token_check.dart';
+import 'package:lactosure_connect_app/lactosure/admin/adminscren.dart';
 import 'package:lactosure_connect_app/lactosure/screens/authen/login.dart';
-import 'package:lactosure_connect_app/lactosure/admin/admin.dart';
-import 'package:lactosure_connect_app/lactosure/screens/scanner.dart';
+import 'package:lactosure_connect_app/lactosure/screens/home.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -11,15 +11,12 @@ class SplashScreen extends StatefulWidget {
   State<SplashScreen> createState() => _SplashScreenState();
 }
 
-class _SplashScreenState extends State<SplashScreen>
-    with SingleTickerProviderStateMixin {
-  late AnimationController _controller;
-
+class _SplashScreenState extends State<SplashScreen> {
   @override
   void initState() {
     super.initState();
 
-    Future.delayed(const Duration(seconds: 5), () {
+    Future.delayed(const Duration(seconds: 3), () {
       checkLogin();
     });
   }
@@ -41,12 +38,12 @@ class _SplashScreenState extends State<SplashScreen>
         if (email != null && email.toLowerCase() == "admin") {
           Navigator.pushReplacement(
             context,
-            MaterialPageRoute(builder: (_) => const Adminpage()),
+            MaterialPageRoute(builder: (_) => const AdminScreen()),
           );
         } else {
           Navigator.pushReplacement(
             context,
-            MaterialPageRoute(builder: (_) => const ScannerPage()),
+            MaterialPageRoute(builder: (_) => const Dashboardhome()),
           );
         }
       } else {
@@ -63,12 +60,6 @@ class _SplashScreenState extends State<SplashScreen>
         MaterialPageRoute(builder: (_) => const LoginPage()),
       );
     }
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
   }
 
   @override

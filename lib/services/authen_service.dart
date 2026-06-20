@@ -24,7 +24,7 @@ class AuthService {
 
       // prevent unexpected end of input
       if (response.body.isNotEmpty) {
-        data = jsonDecode(response.body);
+        data = safeJsonDecode(response.body);
       }
 
       if (response.statusCode == 200) {
@@ -53,7 +53,7 @@ class AuthService {
         body: jsonEncode({"email": email, "otp": otp}),
       );
 
-      final data = jsonDecode(response.body);
+      final data = safeJsonDecode(response.body);
 
       if (response.statusCode == 200) {
         return {"success": true, "message": data["message"]};
@@ -73,7 +73,7 @@ class AuthService {
         body: jsonEncode(email),
       );
 
-      final data = jsonDecode(response.body);
+      final data = safeJsonDecode(response.body);
 
       if (response.statusCode == 200) {
         return {"success": true, "message": data["message"]};
@@ -98,7 +98,7 @@ class AuthService {
         body: jsonEncode({"email": email, "password": password}),
       );
 
-      final data = jsonDecode(response.body);
+      final data = safeJsonDecode(response.body);
 
       // DEBUG
       print(data);
@@ -137,7 +137,7 @@ class AuthService {
     );
 
     if (response.statusCode == 200) {
-      return jsonDecode(response.body);
+      return safeJsonDecode(response.body);
     } else {
       throw Exception("Failed to load users");
     }
@@ -172,7 +172,7 @@ class AuthService {
         body: jsonEncode(email),
       );
 
-      final data = jsonDecode(response.body);
+      final data = safeJsonDecode(response.body);
 
       if (response.statusCode == 200) {
         return {
@@ -203,7 +203,7 @@ class AuthService {
         body: jsonEncode({"email": email, "otp": otp}),
       );
 
-      final data = jsonDecode(response.body);
+      final data = safeJsonDecode(response.body);
 
       if (response.statusCode == 200) {
         return {
@@ -231,7 +231,7 @@ class AuthService {
         body: jsonEncode({"email": email, "password": password}),
       );
 
-      final data = jsonDecode(response.body);
+      final data = safeJsonDecode(response.body);
 
       if (response.statusCode == 200) {
         return {
@@ -247,5 +247,21 @@ class AuthService {
     } catch (e) {
       return {"success": false, "message": e.toString()};
     }
+  }
+}
+
+dynamic safeJsonDecode(String body) {
+  try {
+    if (body.isEmpty) return null;
+
+    // prevent HTML responses
+    if (body.trim().startsWith('<')) {
+      throw Exception("Server returned HTML instead of JSON");
+    }
+
+    return jsonDecode(body);
+  } catch (e) {
+    print("JSON ERROR: $body");
+    throw Exception("Invalid server response");
   }
 }

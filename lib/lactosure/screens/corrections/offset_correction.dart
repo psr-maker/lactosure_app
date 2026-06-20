@@ -1,8 +1,11 @@
 import 'dart:async';
-
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
+import 'package:http/http.dart' as http;
 import 'package:lactosure_connect_app/lactosure/screens/corrections/easy_correction.dart';
+import 'package:lactosure_connect_app/lactosure/widgets/custom_button.dart';
+import 'package:lactosure_connect_app/services/corr_history_model.dart';
 
 class OffsetCorrection extends StatefulWidget {
   final BluetoothDevice device;
@@ -35,79 +38,145 @@ class _OffsetCorrectionState extends State<OffsetCorrection> {
   List<int> buffer = [];
   Completer<List<int>>? frameCompleter;
   List<int>? lastReadFrame;
+  String formattedDate = "";
   Map<String, double> lastReadValues = {};
+  Map<String, double> finalWrittenValues = {};
+  final String apiBaseUrl = 'https://lactosure.azurewebsites.net';
+  bool canSend = false;
+  List<int> responseBuffer = [];
+  Timer? _idleTimer;
 
   @override
   void initState() {
     super.initState();
+    societyIdController.addListener(validateSendButton);
+    machineIdController.addListener(validateSendButton);
+    machineTypeController.addListener(validateSendButton);
     initBle();
+  }
+
+  void validateSendButton() {
+    bool fieldsFilled =
+        societyIdController.text.trim().isNotEmpty &&
+        machineIdController.text.trim().isNotEmpty &&
+        machineTypeController.text.trim().isNotEmpty;
+
+    setState(() {
+      canSend = fieldsFilled && lastReadValues.isNotEmpty;
+    });
   }
 
   Future<void> initBle() async {
     List<BluetoothService> services = await widget.device.discoverServices();
 
-    for (BluetoothService service in services) {
-      for (BluetoothCharacteristic characteristic in service.characteristics) {
-        // WRITE CHARACTERISTIC
+    for (final service in services) {
+      for (final characteristic in service.characteristics) {
         if (characteristic.properties.write ||
             characteristic.properties.writeWithoutResponse) {
           writeCharacteristic = characteristic;
         }
 
-        // NOTIFY CHARACTERISTIC
         if (characteristic.properties.notify) {
           notifyCharacteristic = characteristic;
 
           await characteristic.setNotifyValue(true);
 
-          notifySubscription = notifyCharacteristic!.lastValueStream.listen((
-            data,
-          ) {
-            if (data.isEmpty) return;
-
-            debugPrint("RAW => $data");
-
-            buffer.addAll(data);
-
-            final frame = extractFrame(buffer);
-
-            if (frame != null) {
-              debugPrint(
-                "FRAME => ${frame.map((e) => e.toRadixString(16).padLeft(2, '0')).join(' ')}",
-              );
-
-              if (frameCompleter != null && !frameCompleter!.isCompleted) {
-                frameCompleter!.complete(frame);
-              }
-            }
-          });
+          notifySubscription = characteristic.onValueReceived.listen(_onData);
         }
       }
     }
   }
 
-  List<int>? extractFrame(List<int> buffer) {
-    if (buffer.length < 3) return null;
+  void _onData(List<int> data) {
+    if (data.isEmpty) return;
 
-    if (buffer[0] != 0x40) {
+    debugPrint("RAW => $data");
+
+    responseBuffer.addAll(data);
+    buffer.addAll(data);
+
+    _resetIdleTimer();
+
+    _tryParseFrames();
+  }
+
+  void _tryParseFrames() {
+    List<int>? frame;
+
+    while ((frame = extractFrame(buffer)) != null) {
+      debugPrint("FRAME => $frame");
+
+      // DO NOT complete here
+      _handleFrame(frame!);
+    }
+  }
+
+  void _handleFrame(List<int> frame) {
+    responseBuffer.addAll(frame);
+  }
+
+  void _resetIdleTimer() {
+    _idleTimer?.cancel();
+
+    _idleTimer = Timer(const Duration(milliseconds: 300), () {
+      if (frameCompleter != null && !frameCompleter!.isCompleted) {
+        debugPrint("FINAL RESPONSE => $responseBuffer");
+
+        frameCompleter!.complete(List.from(responseBuffer));
+
+        responseBuffer.clear();
+        buffer.clear();
+      }
+    });
+  }
+
+  List<int>? extractFrame(List<int> buffer) {
+    // resync start byte
+    while (buffer.isNotEmpty && buffer[0] != 0x40) {
+      buffer.removeAt(0);
+    }
+
+    if (buffer.length < 2) return null;
+
+    int payloadLength = buffer[1];
+    int totalLength = payloadLength + 2;
+    debugPrint("Need $totalLength bytes, currently ${buffer.length}");
+    if (totalLength > 300) {
       buffer.removeAt(0);
       return null;
     }
 
-    int payloadLength = buffer[1];
+    if (buffer.length < totalLength) return null;
 
-    int totalLength = payloadLength + 2;
-
-    if (buffer.length < totalLength) {
-      return null;
-    }
-
-    List<int> frame = buffer.sublist(0, totalLength);
-
-    // REMOVE USED FRAME
+    final frame = buffer.sublist(0, totalLength);
     buffer.removeRange(0, totalLength);
 
     return frame;
+  }
+
+  Future<List<int>> sendCommand(List<int> command) async {
+    if (writeCharacteristic == null) {
+      throw Exception("Write characteristic not found");
+    }
+
+    // Clear previous response data
+    buffer.clear();
+
+    // Cancel previous timer
+    _idleTimer?.cancel();
+
+    frameCompleter = Completer<List<int>>();
+
+    await writeCharacteristic!.write(command, withoutResponse: false);
+
+    debugPrint("SENT => ${command.map((e) => e.toRadixString(16)).join(' ')}");
+
+    return await frameCompleter!.future.timeout(
+      const Duration(seconds: 10),
+      onTimeout: () {
+        throw TimeoutException("Device response timeout");
+      },
+    );
   }
 
   List<int> hex(String s) =>
@@ -119,16 +188,6 @@ class _OffsetCorrectionState extends State<OffsetCorrection> {
       xor ^= b;
     }
     return xor & 0xFF;
-  }
-
-  Future<List<int>> sendCommand(List<int> command) async {
-    frameCompleter = Completer<List<int>>();
-
-    await writeCharacteristic!.write(command, withoutResponse: false);
-
-    debugPrint("SENT => ${command.map((e) => e.toRadixString(16)).join(' ')}");
-
-    return frameCompleter!.future.timeout(const Duration(seconds: 8));
   }
 
   Future<void> readChannelValues() async {
@@ -235,7 +294,7 @@ class _OffsetCorrectionState extends State<OffsetCorrection> {
       "water": water,
       "clr": clr,
     };
-
+    validateSendButton();
     debugPrint("FAT => $fat");
     debugPrint("PROTEIN => $protein");
     debugPrint("SNF => $snf");
@@ -323,7 +382,14 @@ class _OffsetCorrectionState extends State<OffsetCorrection> {
       oldVal: oldClr,
       input: clrCorrection,
     );
-
+    finalWrittenValues = {
+      'fat': fat,
+      'snf': snf,
+      'clr': clr,
+      'temp': temp,
+      'protein': protein,
+      'water': water,
+    };
     List<int> toBytes(double value) {
       int v = (value * 100).round();
 
@@ -435,21 +501,305 @@ class _OffsetCorrectionState extends State<OffsetCorrection> {
       final logoutResp = await sendCommand(hex("40 04 D1 00 00 95"));
 
       debugPrint("LOGOUT RESP => $logoutResp");
+      await Future.delayed(const Duration(milliseconds: 300));
+      await updateMachineCorrection();
 
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text("Offset values written successfully")),
+        CustomSnackbar.show(
+          context: context,
+          message: "Offset values written successfully",
         );
       }
     } catch (e) {
       debugPrint("WRITE ERROR => $e");
 
       if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text("Write failed: $e")));
+        CustomSnackbar.show(
+          context: context,
+          message: "Write failed: $e",
+          isError: true,
+        );
       }
     }
+  }
+
+  Future<void> updateMachineCorrection() async {
+    try {
+      print("\n☁️ UPDATING CLOUD WITH CORRECTIONS...");
+
+      String society = societyIdController.text.trim();
+      String machineId = machineIdController.text.trim();
+      String model = machineTypeController.text.trim();
+
+      if (society.isEmpty || machineId.isEmpty || model.isEmpty) {
+        print("❌ Missing required fields");
+        CustomSnackbar.show(
+          context: context,
+          message: "Please enter Society ID, Machine ID and Model",
+          isError: true,
+        );
+
+        return;
+      }
+
+      Map<String, dynamic> payload = {
+        'SocietyID': society,
+        'MachineId': machineId,
+        'MachineType': model,
+
+        // CHANNEL 1
+        'ch1': selectedChannel == "CH1" ? "1" : null,
+        'fat1': selectedChannel == "CH1" ? finalWrittenValues['fat'] : null,
+        'snf1': selectedChannel == "CH1" ? finalWrittenValues['snf'] : null,
+        'clr1': selectedChannel == "CH1" ? finalWrittenValues['clr'] : null,
+        't1': selectedChannel == "CH1" ? finalWrittenValues['temp'] : null,
+        'w1': selectedChannel == "CH1" ? finalWrittenValues['water'] : null,
+        'p1': selectedChannel == "CH1" ? finalWrittenValues['protein'] : null,
+
+        // CHANNEL 2
+        'ch2': selectedChannel == "CH2" ? "2" : null,
+        'fat2': selectedChannel == "CH2" ? finalWrittenValues['fat'] : null,
+        'snf2': selectedChannel == "CH2" ? finalWrittenValues['snf'] : null,
+        'clr2': selectedChannel == "CH2" ? finalWrittenValues['clr'] : null,
+        't2': selectedChannel == "CH2" ? finalWrittenValues['temp'] : null,
+        'w2': selectedChannel == "CH2" ? finalWrittenValues['water'] : null,
+        'p2': selectedChannel == "CH2" ? finalWrittenValues['protein'] : null,
+
+        // CHANNEL 3
+        'ch3': selectedChannel == "CH3" ? "3" : null,
+        'fat3': selectedChannel == "CH3" ? finalWrittenValues['fat'] : null,
+        'snf3': selectedChannel == "CH3" ? finalWrittenValues['snf'] : null,
+        'clr3': selectedChannel == "CH3" ? finalWrittenValues['clr'] : null,
+        't3': selectedChannel == "CH3" ? finalWrittenValues['temp'] : null,
+        'w3': selectedChannel == "CH3" ? finalWrittenValues['water'] : null,
+        'p3': selectedChannel == "CH3" ? finalWrittenValues['protein'] : null,
+
+        'Timestamp': DateTime.now().toIso8601String(),
+      };
+
+      print("Selected Channel => $selectedChannel");
+      print("Final Written Values => $finalWrittenValues");
+
+      print("Payload =>");
+      print(const JsonEncoder.withIndent('  ').convert(payload));
+
+      final response = await http.post(
+        Uri.parse(
+          '$apiBaseUrl/api/MachineCorrection/GetLatestMachineCorrection',
+        ),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode(payload),
+      );
+
+      print("📦 STATUS CODE: ${response.statusCode}");
+      print("📦 RESPONSE: ${response.body}");
+
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        print("✅ CLOUD UPDATE SUCCESSFUL");
+
+        CustomSnackbar.show(
+          context: context,
+          message: "Correction Saved Successfully",
+        );
+      } else {
+        print("❌ CLOUD UPDATE FAILED");
+
+        CustomSnackbar.show(
+          context: context,
+          message: "Failed: ${response.statusCode}",
+          isError: true,
+        );
+      }
+    } catch (e) {
+      print("❌ CLOUD UPDATE ERROR: $e");
+
+      CustomSnackbar.show(
+        context: context,
+        message: "Error: $e",
+        isError: true,
+      );
+    }
+  }
+
+  Future<List<CorrectionHistory>> fetchCorrectionHistory() async {
+    try {
+      String society = societyIdController.text.trim();
+      String machineId = machineIdController.text.trim();
+      String model = machineTypeController.text.trim();
+
+      final uri =
+          Uri.parse(
+            '$apiBaseUrl/api/MachineCorrection/GetCorrectionByDetails',
+          ).replace(
+            queryParameters: {
+              'SocietyID': society,
+              'MachineID': machineId,
+              'MachineType': model,
+            },
+          );
+
+      print("📥 FETCHING HISTORY...");
+      print(uri);
+
+      final response = await http.get(uri);
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        print("data.....🤠🤠🤠🤠");
+        print(data);
+
+        if (data is List) {
+          return data.map((e) => CorrectionHistory.fromJson(e)).toList();
+        }
+
+        return [];
+      } else {
+        print("❌ HISTORY FETCH FAILED: ${response.statusCode}");
+        return [];
+      }
+    } catch (e) {
+      print("❌ HISTORY ERROR: $e");
+      return [];
+    }
+  }
+
+  Future<void> showHistoryDialog() async {
+    List<CorrectionHistory> history = await fetchCorrectionHistory();
+
+    if (!mounted) return;
+
+    showDialog(
+      context: context,
+      builder: (context) {
+        return Dialog(
+          backgroundColor: const Color(0xFF1E293B),
+          child: Container(
+            padding: const EdgeInsets.all(16),
+            height: 500,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    const Text(
+                      "Correction History",
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    IconButton(
+                      onPressed: () {
+                        Navigator.pop(context);
+                      },
+                      icon: const Icon(Icons.cancel_sharp, color: Colors.white),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 20),
+                Expanded(
+                  child: history.isEmpty
+                      ? const Center(
+                          child: Text(
+                            "No History Found",
+                            style: TextStyle(color: Colors.white),
+                          ),
+                        )
+                      : ListView.builder(
+                          itemCount: history.length,
+                          itemBuilder: (context, index) {
+                            final item = history[index];
+                            try {
+                              DateTime dt = DateTime.parse(item.backupDateTime);
+
+                              formattedDate =
+                                  "${dt.day.toString().padLeft(2, '0')}-"
+                                  "${dt.month.toString().padLeft(2, '0')}-"
+                                  "${dt.year}  "
+                                  "${dt.hour.toString().padLeft(2, '0')}:"
+                                  "${dt.minute.toString().padLeft(2, '0')}";
+                            } catch (e) {
+                              formattedDate = item.backupDateTime;
+                            }
+                            return Container(
+                              margin: const EdgeInsets.only(bottom: 12),
+                              padding: const EdgeInsets.all(14),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFF0F172A),
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    "Channel ${item.ch1 ?? item.ch2 ?? item.ch3 ?? '-'}",
+                                    style: const TextStyle(
+                                      color: Colors.orange,
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 16,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 8),
+                                  Text(
+                                    "Date: $formattedDate",
+                                    style: const TextStyle(
+                                      color: Colors.white70,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 10),
+                                  Wrap(
+                                    spacing: 10,
+                                    runSpacing: 10,
+                                    children: [
+                                      _historyChip(
+                                        "Fat",
+                                        item.fat1 ??
+                                            item.fat2 ??
+                                            item.fat3 ??
+                                            "0",
+                                      ),
+                                      _historyChip(
+                                        "SNF",
+                                        item.snf1 ??
+                                            item.snf2 ??
+                                            item.snf3 ??
+                                            "0",
+                                      ),
+                                      _historyChip(
+                                        "CLR",
+                                        item.clr1 ??
+                                            item.clr2 ??
+                                            item.clr3 ??
+                                            "0",
+                                      ),
+                                      _historyChip(
+                                        "Temp",
+                                        item.t1 ?? item.t2 ?? item.t3 ?? "0",
+                                      ),
+                                      _historyChip(
+                                        "Protein",
+                                        item.p1 ?? item.p2 ?? item.p3 ?? "0",
+                                      ),
+                                      _historyChip(
+                                        "Water",
+                                        item.w1 ?? item.w2 ?? item.w3 ?? "0",
+                                      ),
+                                    ],
+                                  ),
+                                ],
+                              ),
+                            );
+                          },
+                        ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
   }
 
   @override
@@ -570,7 +920,9 @@ class _OffsetCorrectionState extends State<OffsetCorrection> {
                     ),
                   ),
                   IconButton(
-                    onPressed: () async {},
+                    onPressed: () async {
+                      await showHistoryDialog();
+                    },
                     icon: const Icon(Icons.history, color: Colors.orange),
                   ),
                 ],
@@ -755,16 +1107,16 @@ class _OffsetCorrectionState extends State<OffsetCorrection> {
           height: 50,
           child: ElevatedButton(
             style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.orange,
+              backgroundColor: canSend ? Colors.orange : Colors.grey,
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(12),
               ),
             ),
-            onPressed: sendOffsetValues,
-            child: const Text(
+            onPressed: canSend ? sendOffsetValues : null,
+            child: Text(
               'Send',
               style: TextStyle(
-                color: Colors.white,
+                color: canSend ? Colors.white : Colors.grey,
                 fontWeight: FontWeight.bold,
               ),
             ),
@@ -779,6 +1131,23 @@ class _OffsetCorrectionState extends State<OffsetCorrection> {
           ),
         ),
       ],
+    );
+  }
+
+  Widget _historyChip(String title, String value) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      decoration: BoxDecoration(
+        color: Colors.teal.withOpacity(0.2),
+        borderRadius: BorderRadius.circular(10),
+      ),
+      child: Text(
+        "$title : $value",
+        style: const TextStyle(
+          color: Colors.white,
+          fontWeight: FontWeight.w600,
+        ),
+      ),
     );
   }
 }
