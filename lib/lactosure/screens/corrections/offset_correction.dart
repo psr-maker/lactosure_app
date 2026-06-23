@@ -5,6 +5,7 @@ import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 import 'package:http/http.dart' as http;
 import 'package:lactosure_connect_app/lactosure/screens/corrections/easy_correction.dart';
 import 'package:lactosure_connect_app/lactosure/widgets/custom_button.dart';
+import 'package:lactosure_connect_app/services/admin_services/adminservice.dart';
 import 'package:lactosure_connect_app/services/corr_history_model.dart';
 
 class OffsetCorrection extends StatefulWidget {
@@ -46,20 +47,44 @@ class _OffsetCorrectionState extends State<OffsetCorrection> {
   List<int> responseBuffer = [];
   Timer? _idleTimer;
 
+  String? selectedSocietyId;
+  String? selectedMachineId;
+  String? selectedMachineType;
+  bool isLoading = true;
+
+  List<dynamic> machines = [];
+  List<dynamic> societies = [];
+  List<dynamic> machineTypes = [];
   @override
   void initState() {
     super.initState();
-    societyIdController.addListener(validateSendButton);
-    machineIdController.addListener(validateSendButton);
-    machineTypeController.addListener(validateSendButton);
     initBle();
+    loadData();
+  }
+
+  Future<void> loadData() async {
+    setState(() => isLoading = true);
+
+    try {
+      final machineData = await AdminService.getMachines();
+      final societyData = await AdminService.getSocieties();
+      final machineTypeData = await AdminService.getMachineTypes();
+
+      setState(() {
+        machines = machineData;
+        societies = societyData;
+        machineTypes = machineTypeData;
+      });
+    } finally {
+      setState(() => isLoading = false);
+    }
   }
 
   void validateSendButton() {
     bool fieldsFilled =
-        societyIdController.text.trim().isNotEmpty &&
-        machineIdController.text.trim().isNotEmpty &&
-        machineTypeController.text.trim().isNotEmpty;
+        selectedSocietyId != null &&
+        selectedMachineId != null &&
+        selectedMachineType != null;
 
     setState(() {
       canSend = fieldsFilled && lastReadValues.isNotEmpty;
@@ -527,9 +552,9 @@ class _OffsetCorrectionState extends State<OffsetCorrection> {
     try {
       print("\n☁️ UPDATING CLOUD WITH CORRECTIONS...");
 
-      String society = societyIdController.text.trim();
-      String machineId = machineIdController.text.trim();
-      String model = machineTypeController.text.trim();
+      String society = selectedSocietyId ?? "";
+      String machineId = selectedMachineId ?? "";
+      String model = selectedMachineType ?? "";
 
       if (society.isEmpty || machineId.isEmpty || model.isEmpty) {
         print("❌ Missing required fields");
@@ -623,9 +648,9 @@ class _OffsetCorrectionState extends State<OffsetCorrection> {
 
   Future<List<CorrectionHistory>> fetchCorrectionHistory() async {
     try {
-      String society = societyIdController.text.trim();
-      String machineId = machineIdController.text.trim();
-      String model = machineTypeController.text.trim();
+      String society = selectedSocietyId ?? "";
+      String machineId = selectedMachineId ?? "";
+      String model = selectedMachineType ?? "";
 
       final uri =
           Uri.parse(
@@ -955,93 +980,117 @@ class _OffsetCorrectionState extends State<OffsetCorrection> {
   }
 
   Widget _buildCommonCard() {
-    return Row(
+    return Column(
       children: [
-        Expanded(
-          child: TextField(
-            controller: societyIdController,
-            style: const TextStyle(color: Colors.white, fontSize: 15),
-            decoration: InputDecoration(
-              labelText: "Society Id",
-              labelStyle: const TextStyle(color: Color(0xFF94A3B8)),
-              enabledBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(10),
-                borderSide: const BorderSide(color: Color(0xFF334155)),
-              ),
-              focusedBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(10),
-                borderSide: const BorderSide(color: Colors.white, width: 1.5),
+        Row(
+          children: [
+            Expanded(
+              child: DropdownButtonFormField<String>(
+                value: selectedSocietyId,
+                dropdownColor: const Color(0xFF1E293B),
+                style: const TextStyle(color: Colors.white),
+                decoration: _dropdownDecoration("Society"),
+                items: societies.map<DropdownMenuItem<String>>((society) {
+                  return DropdownMenuItem<String>(
+                    value: society["societyCode"].toString(),
+                    child: Text(
+                      society["societyCode"].toString(),
+                      style: const TextStyle(color: Colors.white),
+                    ),
+                  );
+                }).toList(),
+                onChanged: (value) {
+                  setState(() {
+                    selectedSocietyId = value;
+                  });
+                  validateSendButton();
+                },
               ),
             ),
-          ),
+            SizedBox(width: 5),
+            Expanded(
+              child: DropdownButtonFormField<String>(
+                value: selectedMachineId,
+                dropdownColor: const Color(0xFF1E293B),
+                style: const TextStyle(color: Colors.white),
+                decoration: _dropdownDecoration("Machine"),
+                items: machines.map<DropdownMenuItem<String>>((machine) {
+                  return DropdownMenuItem<String>(
+                    value: machine["machineCode"].toString(),
+                    child: Text(
+                      machine["machineCode"].toString(),
+                      style: const TextStyle(color: Colors.white),
+                    ),
+                  );
+                }).toList(),
+                onChanged: (value) {
+                  setState(() {
+                    selectedMachineId = value;
+                  });
+                  validateSendButton();
+                },
+              ),
+            ),
+          ],
         ),
-        const SizedBox(width: 10),
-        Expanded(
-          child: TextField(
-            controller: machineIdController,
-            style: const TextStyle(color: Colors.white, fontSize: 15),
-            decoration: InputDecoration(
-              labelText: "Machine Id",
-              labelStyle: const TextStyle(color: Color(0xFF94A3B8)),
-              enabledBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(10),
-                borderSide: const BorderSide(color: Color(0xFF334155)),
+
+        const SizedBox(height: 12),
+
+        DropdownButtonFormField<String>(
+          value: selectedMachineType,
+          dropdownColor: const Color(0xFF1E293B),
+          style: const TextStyle(color: Colors.white),
+          decoration: _dropdownDecoration("Model"),
+          items: machineTypes.map<DropdownMenuItem<String>>((type) {
+            return DropdownMenuItem<String>(
+              value: type["mType"].toString(),
+              child: Text(
+                type["mType"].toString(),
+                style: const TextStyle(color: Colors.white),
               ),
-              focusedBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(10),
-                borderSide: const BorderSide(color: Colors.white, width: 1.5),
-              ),
-            ),
-          ),
+            );
+          }).toList(),
+          onChanged: (value) {
+            setState(() {
+              selectedMachineType = value;
+            });
+            validateSendButton();
+          },
         ),
-        const SizedBox(width: 10),
-        Expanded(
-          child: TextField(
-            controller: machineTypeController,
-            style: const TextStyle(color: Colors.white, fontSize: 15),
-            decoration: InputDecoration(
-              labelText: "Machine Type",
-              labelStyle: const TextStyle(color: Color(0xFF94A3B8)),
-              enabledBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(10),
-                borderSide: const BorderSide(color: Color(0xFF334155)),
-              ),
-              focusedBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(10),
-                borderSide: const BorderSide(color: Colors.white, width: 1.5),
-              ),
-            ),
-          ),
-        ),
-        const SizedBox(width: 10),
-        Expanded(
-          child: DropdownButtonFormField<String>(
-            value: selectedChannel,
-            dropdownColor: const Color(0xFF1E293B),
-            style: const TextStyle(color: Colors.white),
-            decoration: InputDecoration(
-              labelText: 'Channel',
-              labelStyle: const TextStyle(color: Color(0xFF94A3B8)),
-              enabledBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(10),
-                borderSide: const BorderSide(color: Color(0xFF334155)),
-              ),
-              focusedBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(10),
-                borderSide: const BorderSide(color: Colors.white, width: 1.5),
-              ),
-            ),
-            items: channels.map((channel) {
-              return DropdownMenuItem(value: channel, child: Text(channel));
-            }).toList(),
-            onChanged: (value) {
-              setState(() {
-                selectedChannel = value!;
-              });
-            },
-          ),
+        const SizedBox(height: 12),
+        DropdownButtonFormField<String>(
+          value: selectedChannel,
+          dropdownColor: const Color(0xFF1E293B),
+          style: const TextStyle(color: Colors.white),
+          decoration: _dropdownDecoration("Channel"),
+          items: channels.map((channel) {
+            return DropdownMenuItem<String>(
+              value: channel,
+              child: Text(channel),
+            );
+          }).toList(),
+          onChanged: (value) {
+            setState(() {
+              selectedChannel = value!;
+            });
+          },
         ),
       ],
+    );
+  }
+
+  InputDecoration _dropdownDecoration(String label) {
+    return InputDecoration(
+      labelText: label,
+      labelStyle: const TextStyle(color: Color(0xFF94A3B8)),
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(10),
+        borderSide: const BorderSide(color: Color(0xFF334155)),
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(10),
+        borderSide: const BorderSide(color: Colors.white, width: 1.5),
+      ),
     );
   }
 

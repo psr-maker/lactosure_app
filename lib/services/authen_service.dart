@@ -1,10 +1,13 @@
 import 'dart:convert';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:http/http.dart' as http;
 import 'package:lactosure_connect_app/constant/api_url.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class AuthService {
   static const String url = Api.baseUrl;
+  static const String _tokenKey = "auth_token";
+  static const FlutterSecureStorage _storage = FlutterSecureStorage();
 
   static Future<Map<String, dynamic>> registerUser({
     required String name,
@@ -110,8 +113,8 @@ class AuthService {
             data["user"]?["email"] ?? data["user"]?["Email"] ?? "";
 
         // Save token
-        await prefs.setString("token", data["token"] ?? "");
-
+        // await prefs.setString("token", data["token"] ?? "");
+        await _storage.write(key: _tokenKey, value: data["token"] ?? "");
         // Save email
         await prefs.setString("email", userEmail);
 
@@ -247,6 +250,14 @@ class AuthService {
     } catch (e) {
       return {"success": false, "message": e.toString()};
     }
+  }
+
+  static Future<String?> getToken() async {
+    return await _storage.read(key: _tokenKey);
+  }
+
+  static Future<void> logout() async {
+    await _storage.delete(key: _tokenKey);
   }
 }
 

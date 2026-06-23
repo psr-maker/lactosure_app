@@ -39,6 +39,12 @@ dependencies:
   permission_handler: ^12.0.1
   flutter_blue_plus: ^2.3.4
   provider: ^6.1.5+1
+  camera: ^0.12.0+1
+  image_picker: ^1.2.2
+  google_mlkit_face_detection: ^0.13.2
+  tflite_flutter: ^0.12.1
+  image: ^4.8.0
+  flutter_secure_storage: ^10.3.1
 
 dev_dependencies:
   flutter_test:
@@ -65,7 +71,6 @@ flutter:
   # To add assets to your application, add an assets section, like this:
   assets:
     - assets/
-  #   - images/a_dot_ham.jpeg
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/to/resolution-aware-images

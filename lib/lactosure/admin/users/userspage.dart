@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:lactosure_connect_app/constant/loadingflw.dart';
+import 'package:lactosure_connect_app/lactosure/admin/face/face_register.dart';
 import 'package:lactosure_connect_app/services/authen_service.dart';
 
 class UsersPage extends StatefulWidget {
@@ -125,8 +126,8 @@ class _UsersPageState extends State<UsersPage>
           unselectedLabelStyle: Theme.of(context).textTheme.titleMedium,
 
           tabs: const [
-            Tab(text: "Pending"),
             Tab(text: "Approved"),
+            Tab(text: "Pending"),
           ],
         ),
       ),
@@ -136,8 +137,8 @@ class _UsersPageState extends State<UsersPage>
           : TabBarView(
               controller: tabController,
               children: [
-                buildList(getPending(), "pending"),
                 buildList(getApproved(), "approved"),
+                buildList(getPending(), "pending"),
               ],
             ),
     );
@@ -170,13 +171,51 @@ class _UsersPageState extends State<UsersPage>
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              user["name"] ?? "",
-              style: Theme.of(context).textTheme.headlineLarge,
+            /// Name + Face Enrollment Icon
+            Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    user["name"] ?? "",
+                    style: Theme.of(context).textTheme.headlineLarge,
+                  ),
+                ),
+
+                /// Show only for approved users
+                if (isApproved)
+                  InkWell(
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => FaceEnrollment(
+                            userId: user["uId"],
+                            userName: user["name"] ?? "",
+                          ),
+                        ),
+                      );
+                    },
+                    borderRadius: BorderRadius.circular(8),
+                    child: Container(
+                      height: 40,
+                      width: 40,
+                      decoration: BoxDecoration(
+                        color: Theme.of(context).colorScheme.primary,
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Icon(
+                        Icons.face_retouching_natural,
+                        color: Theme.of(context).colorScheme.onPrimary,
+                        size: 22,
+                      ),
+                    ),
+                  ),
+              ],
             ),
 
-            const SizedBox(height: 8),
+            const SizedBox(height: 10),
 
+            /// Email
             Row(
               children: [
                 Icon(
@@ -184,7 +223,7 @@ class _UsersPageState extends State<UsersPage>
                   size: 18,
                   color: Theme.of(context).colorScheme.onSecondary,
                 ),
-                const SizedBox(width: 6),
+                const SizedBox(width: 8),
                 Expanded(
                   child: Text(
                     user["email"] ?? "",
@@ -193,50 +232,53 @@ class _UsersPageState extends State<UsersPage>
                 ),
               ],
             ),
-            const SizedBox(height: 10),
 
-            Row(
-              mainAxisAlignment: MainAxisAlignment.end,
-              children: [
-                if (type == "pending") ...[
-                  ElevatedButton.icon(
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Theme.of(context).colorScheme.tertiary,
-                      foregroundColor: Theme.of(context).colorScheme.onPrimary,
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 20,
-                        vertical: 12,
+            /// Approve / Reject Buttons for Pending Users
+            if (type == "pending") ...[
+              const SizedBox(height: 16),
+
+              Row(
+                children: [
+                  Expanded(
+                    child: ElevatedButton.icon(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Theme.of(context).colorScheme.tertiary,
+                        foregroundColor: Theme.of(
+                          context,
+                        ).colorScheme.onPrimary,
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(10),
+                        ),
                       ),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(10),
-                      ),
+                      onPressed: () => approveUser(user["uId"]),
+                      icon: const Icon(Icons.check, size: 18),
+                      label: const Text("Approve"),
                     ),
-                    onPressed: () => approveUser(user["uId"]),
-                    icon: const Icon(Icons.check, size: 18),
-                    label: const Text("Approve"),
                   ),
 
-                  const SizedBox(width: 8),
+                  const SizedBox(width: 10),
 
-                  ElevatedButton.icon(
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Theme.of(context).colorScheme.error,
-                      foregroundColor: Theme.of(context).colorScheme.onPrimary,
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 20,
-                        vertical: 12,
+                  Expanded(
+                    child: ElevatedButton.icon(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Theme.of(context).colorScheme.error,
+                        foregroundColor: Theme.of(
+                          context,
+                        ).colorScheme.onPrimary,
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(10),
+                        ),
                       ),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(10),
-                      ),
+                      onPressed: () => rejectUser(user["uId"]),
+                      icon: const Icon(Icons.close, size: 18),
+                      label: const Text("Reject"),
                     ),
-                    onPressed: () => rejectUser(user["uId"]),
-                    icon: const Icon(Icons.close, size: 18),
-                    label: const Text("Reject"),
                   ),
                 ],
-              ],
-            ),
+              ),
+            ],
           ],
         ),
       ),

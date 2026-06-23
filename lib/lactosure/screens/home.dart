@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:lactosure_connect_app/constant/global/ble_session.dart';
+import 'package:lactosure_connect_app/lactosure/admin/face/verify_face.dart';
 import 'package:lactosure_connect_app/lactosure/screens/corrections/offset_correction.dart';
 import 'package:lactosure_connect_app/lactosure/screens/scanner.dart';
 import 'package:lactosure_connect_app/lactosure/widgets/custom_button.dart';
@@ -60,6 +61,15 @@ class _DashboardhomeState extends State<Dashboardhome> {
                 });
               }
             },
+          ),
+          IconButton(
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const FaceLoginPage()),
+              );
+            },
+            icon: Icon(Icons.qr_code_scanner_outlined),
           ),
         ],
       ),

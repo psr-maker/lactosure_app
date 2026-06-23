@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:lactosure_connect_app/constant/global/ble_session.dart';
 import 'package:lactosure_connect_app/lactosure/screens/home.dart';
+import 'package:lactosure_connect_app/services/admin_services/adminservice.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
@@ -17,17 +18,17 @@ class ScannerPage extends StatefulWidget {
 class _ScannerPageState extends State<ScannerPage> {
   List<ScanResult> scanResults = [];
   StreamSubscription? scanSubscription;
+  List allowedDevices = [];
 
   @override
   void initState() {
     super.initState();
     startScan();
+    loadAllowedDevices();
   }
 
-  @override
-  void dispose() {
-    scanSubscription?.cancel();
-    super.dispose();
+  Future<void> loadAllowedDevices() async {
+    allowedDevices = await AdminService.getDevices();
   }
 
   Future<void> startScan() async {
@@ -57,7 +58,7 @@ class _ScannerPageState extends State<ScannerPage> {
           isError: true,
         );
         return;
-      } 
+      }
     }
 
     scanResults.clear();
@@ -75,6 +76,32 @@ class _ScannerPageState extends State<ScannerPage> {
 
   Future<void> connectDevice(BluetoothDevice device) async {
     try {
+      final mac = device.remoteId.str.toUpperCase();
+
+      final matchedDevice = allowedDevices.cast<Map>().firstWhere(
+        (d) => d["macAddress"].toString().toUpperCase() == mac,
+        orElse: () => {},
+      );
+
+      if (matchedDevice.isEmpty) {
+        CustomSnackbar.show(
+          context: context,
+          message: "Unauthorized Device",
+          isError: true,
+        );
+        return;
+      }
+
+      if (matchedDevice["isActive"] != true) {
+        CustomSnackbar.show(
+          context: context,
+          message: "Device is inactive",
+          isError: true,
+        );
+        return;
+      }
+
+      // Connect
       await device.connect(
         license: License.free,
         timeout: const Duration(seconds: 15),
@@ -106,6 +133,12 @@ class _ScannerPageState extends State<ScannerPage> {
         isError: true,
       );
     }
+  }
+
+  @override
+  void dispose() {
+    scanSubscription?.cancel();
+    super.dispose();
   }
 
   @override

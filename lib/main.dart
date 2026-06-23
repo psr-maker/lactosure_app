@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:lactosure_connect_app/constant/theme.dart';
 import 'package:lactosure_connect_app/lactosure/admin/adminscren.dart';
+import 'package:lactosure_connect_app/lactosure/screens/authen/register.dart';
 import 'package:lactosure_connect_app/lactosure/splash.dart';
 import 'package:provider/provider.dart';
 
@@ -28,6 +29,7 @@ class MyApp extends StatelessWidget {
                 : ThemeMode.light,
             home: const SplashScreen(),
             // home: const AdminScreen(),
+            // home: RegisterUser(),
           );
         },
       ),
