@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:lactosure_connect_app/lactosure/admin/adminscren.dart';
+import 'package:lactosure_connect_app/lactosure/admin/face/verify_face.dart';
 import 'package:lactosure_connect_app/lactosure/screens/authen/forget_pw.dart';
 import 'package:lactosure_connect_app/lactosure/screens/authen/register.dart';
 import 'package:lactosure_connect_app/lactosure/screens/home.dart';
 import 'package:lactosure_connect_app/lactosure/widgets/custom_button.dart';
 import 'package:lactosure_connect_app/lactosure/widgets/custom_textfield.dart';
+import 'package:lactosure_connect_app/services/admin_services/faceservice.dart';
 import 'package:lactosure_connect_app/services/authen_service.dart';
 
 class LoginPage extends StatefulWidget {
@@ -155,12 +157,25 @@ class _LoginPageState extends State<LoginPage> {
                           }
                           // User
                           else {
-                            Navigator.pushReplacement(
-                              context,
-                              MaterialPageRoute(
-                                builder: (_) => const Dashboardhome(),
-                              ),
-                            );
+                            final face = await Faceservice.getFaceStatus();
+
+                            if (!mounted) return;
+
+                            if (face["status"] == true) {
+                              Navigator.pushReplacement(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (_) => const FaceLoginPage(),
+                                ),
+                              );
+                            } else {
+                              Navigator.pushReplacement(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (_) => const Dashboardhome(),
+                                ),
+                              );
+                            }
                           }
                         } else {
                           CustomSnackbar.show(

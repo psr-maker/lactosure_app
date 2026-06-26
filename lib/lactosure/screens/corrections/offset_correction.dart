@@ -697,7 +697,7 @@ class _OffsetCorrectionState extends State<OffsetCorrection> {
       context: context,
       builder: (context) {
         return Dialog(
-          backgroundColor: const Color(0xFF1E293B),
+          backgroundColor: Theme.of(context).colorScheme.primary,
           child: Container(
             padding: const EdgeInsets.all(16),
             height: 500,
@@ -707,31 +707,25 @@ class _OffsetCorrectionState extends State<OffsetCorrection> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    const Text(
+                    Text(
                       "Correction History",
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                      ),
+                      style: Theme.of(context).textTheme.displaySmall,
                     ),
                     IconButton(
                       onPressed: () {
                         Navigator.pop(context);
                       },
-                      icon: const Icon(Icons.cancel_sharp, color: Colors.white),
+                      icon: Icon(
+                        Icons.cancel_sharp,
+                        color: Theme.of(context).colorScheme.onPrimary,
+                      ),
                     ),
                   ],
                 ),
                 const SizedBox(height: 20),
                 Expanded(
                   child: history.isEmpty
-                      ? const Center(
-                          child: Text(
-                            "No History Found",
-                            style: TextStyle(color: Colors.white),
-                          ),
-                        )
+                      ? const Center(child: Text("No History Found"))
                       : ListView.builder(
                           itemCount: history.length,
                           itemBuilder: (context, index) {
@@ -752,7 +746,7 @@ class _OffsetCorrectionState extends State<OffsetCorrection> {
                               margin: const EdgeInsets.only(bottom: 12),
                               padding: const EdgeInsets.all(14),
                               decoration: BoxDecoration(
-                                color: const Color(0xFF0F172A),
+                                color: Theme.of(context).colorScheme.primary,
                                 borderRadius: BorderRadius.circular(12),
                               ),
                               child: Column(
@@ -760,18 +754,16 @@ class _OffsetCorrectionState extends State<OffsetCorrection> {
                                 children: [
                                   Text(
                                     "Channel ${item.ch1 ?? item.ch2 ?? item.ch3 ?? '-'}",
-                                    style: const TextStyle(
-                                      color: Colors.orange,
-                                      fontWeight: FontWeight.bold,
-                                      fontSize: 16,
-                                    ),
+                                    style: Theme.of(
+                                      context,
+                                    ).textTheme.bodyMedium,
                                   ),
                                   const SizedBox(height: 8),
                                   Text(
                                     "Date: $formattedDate",
-                                    style: const TextStyle(
-                                      color: Colors.white70,
-                                    ),
+                                    style: Theme.of(
+                                      context,
+                                    ).textTheme.headlineMedium,
                                   ),
                                   const SizedBox(height: 10),
                                   Wrap(
@@ -848,23 +840,14 @@ class _OffsetCorrectionState extends State<OffsetCorrection> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF0F172A),
       appBar: AppBar(
-        backgroundColor: const Color(0xFF1E293B),
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new, color: Colors.white),
+          icon: const Icon(Icons.arrow_back_ios_new),
           onPressed: () {
             Navigator.pop(context);
           },
         ),
-        title: const Text(
-          'Machine Settings',
-          style: TextStyle(
-            color: Colors.white,
-            fontWeight: FontWeight.bold,
-            fontSize: 15,
-          ),
-        ),
+        title: const Text('Machine Settings'),
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
@@ -884,17 +867,14 @@ class _OffsetCorrectionState extends State<OffsetCorrection> {
                       height: 50,
                       decoration: BoxDecoration(
                         color: selectedTab == 0
-                            ? const Color.fromARGB(255, 16, 134, 109)
-                            : const Color(0xFF1E293B),
+                            ? Theme.of(context).colorScheme.onTertiary
+                            : Theme.of(context).colorScheme.primary,
                         borderRadius: BorderRadius.circular(12),
                       ),
-                      child: const Center(
+                      child: Center(
                         child: Text(
                           'Common Offsets',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontWeight: FontWeight.bold,
-                          ),
+                          style: Theme.of(context).textTheme.headlineLarge,
                         ),
                       ),
                     ),
@@ -912,17 +892,14 @@ class _OffsetCorrectionState extends State<OffsetCorrection> {
                       height: 50,
                       decoration: BoxDecoration(
                         color: selectedTab == 1
-                            ? const Color.fromARGB(255, 16, 134, 109)
-                            : const Color(0xFF1E293B),
+                            ? Theme.of(context).colorScheme.onTertiary
+                            : Theme.of(context).colorScheme.primary,
                         borderRadius: BorderRadius.circular(12),
                       ),
-                      child: const Center(
+                      child: Center(
                         child: Text(
                           'Easy Corrections',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontWeight: FontWeight.bold,
-                          ),
+                          style: Theme.of(context).textTheme.headlineLarge,
                         ),
                       ),
                     ),
@@ -936,19 +913,18 @@ class _OffsetCorrectionState extends State<OffsetCorrection> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  const Text(
+                  Text(
                     'Corrections',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                    ),
+                    style: Theme.of(context).textTheme.displaySmall,
                   ),
                   IconButton(
                     onPressed: () async {
                       await showHistoryDialog();
                     },
-                    icon: const Icon(Icons.history, color: Colors.orange),
+                    icon: Icon(
+                      Icons.history,
+                      color: Theme.of(context).colorScheme.background,
+                    ),
                   ),
                 ],
               ),
@@ -957,11 +933,7 @@ class _OffsetCorrectionState extends State<OffsetCorrection> {
               const SizedBox(height: 25),
               Text(
                 "Selected Channel Type : $selectedChannel",
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 15,
-                  fontWeight: FontWeight.bold,
-                ),
+                style: Theme.of(context).textTheme.headlineLarge,
               ),
 
               const SizedBox(height: 20),
@@ -987,15 +959,15 @@ class _OffsetCorrectionState extends State<OffsetCorrection> {
             Expanded(
               child: DropdownButtonFormField<String>(
                 value: selectedSocietyId,
-                dropdownColor: const Color(0xFF1E293B),
-                style: const TextStyle(color: Colors.white),
+                dropdownColor: Theme.of(context).colorScheme.primary,
+                style: Theme.of(context).textTheme.headlineLarge,
                 decoration: _dropdownDecoration("Society"),
                 items: societies.map<DropdownMenuItem<String>>((society) {
                   return DropdownMenuItem<String>(
                     value: society["societyCode"].toString(),
                     child: Text(
                       society["societyCode"].toString(),
-                      style: const TextStyle(color: Colors.white),
+                      style: Theme.of(context).textTheme.headlineLarge,
                     ),
                   );
                 }).toList(),
@@ -1011,15 +983,15 @@ class _OffsetCorrectionState extends State<OffsetCorrection> {
             Expanded(
               child: DropdownButtonFormField<String>(
                 value: selectedMachineId,
-                dropdownColor: const Color(0xFF1E293B),
-                style: const TextStyle(color: Colors.white),
+                dropdownColor: Theme.of(context).colorScheme.primary,
+                style: Theme.of(context).textTheme.headlineLarge,
                 decoration: _dropdownDecoration("Machine"),
                 items: machines.map<DropdownMenuItem<String>>((machine) {
                   return DropdownMenuItem<String>(
                     value: machine["machineCode"].toString(),
                     child: Text(
                       machine["machineCode"].toString(),
-                      style: const TextStyle(color: Colors.white),
+                      style: Theme.of(context).textTheme.headlineLarge,
                     ),
                   );
                 }).toList(),
@@ -1034,19 +1006,19 @@ class _OffsetCorrectionState extends State<OffsetCorrection> {
           ],
         ),
 
-        const SizedBox(height: 12),
+        const SizedBox(height: 15),
 
         DropdownButtonFormField<String>(
           value: selectedMachineType,
-          dropdownColor: const Color(0xFF1E293B),
-          style: const TextStyle(color: Colors.white),
+          dropdownColor: Theme.of(context).colorScheme.primary,
+          style: Theme.of(context).textTheme.headlineLarge,
           decoration: _dropdownDecoration("Model"),
           items: machineTypes.map<DropdownMenuItem<String>>((type) {
             return DropdownMenuItem<String>(
               value: type["mType"].toString(),
               child: Text(
                 type["mType"].toString(),
-                style: const TextStyle(color: Colors.white),
+                style: Theme.of(context).textTheme.headlineLarge,
               ),
             );
           }).toList(),
@@ -1057,11 +1029,11 @@ class _OffsetCorrectionState extends State<OffsetCorrection> {
             validateSendButton();
           },
         ),
-        const SizedBox(height: 12),
+        const SizedBox(height: 15),
         DropdownButtonFormField<String>(
           value: selectedChannel,
-          dropdownColor: const Color(0xFF1E293B),
-          style: const TextStyle(color: Colors.white),
+          dropdownColor: Theme.of(context).colorScheme.primary,
+          style: Theme.of(context).textTheme.headlineLarge,
           decoration: _dropdownDecoration("Channel"),
           items: channels.map((channel) {
             return DropdownMenuItem<String>(
@@ -1082,14 +1054,17 @@ class _OffsetCorrectionState extends State<OffsetCorrection> {
   InputDecoration _dropdownDecoration(String label) {
     return InputDecoration(
       labelText: label,
-      labelStyle: const TextStyle(color: Color(0xFF94A3B8)),
+      labelStyle: TextStyle(color: Theme.of(context).colorScheme.secondary),
       enabledBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(10),
         borderSide: const BorderSide(color: Color(0xFF334155)),
       ),
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(10),
-        borderSide: const BorderSide(color: Colors.white, width: 1.5),
+        borderSide: BorderSide(
+          color: Theme.of(context).colorScheme.onPrimary,
+          width: 1.5,
+        ),
       ),
     );
   }
@@ -1127,7 +1102,7 @@ class _OffsetCorrectionState extends State<OffsetCorrection> {
     return TextField(
       controller: controller,
       keyboardType: TextInputType.number,
-      style: const TextStyle(color: Colors.white),
+      style: Theme.of(context).textTheme.headlineMedium,
       decoration: _inputDecoration(label),
     );
   }
@@ -1156,7 +1131,9 @@ class _OffsetCorrectionState extends State<OffsetCorrection> {
           height: 50,
           child: ElevatedButton(
             style: ElevatedButton.styleFrom(
-              backgroundColor: canSend ? Colors.orange : Colors.grey,
+              backgroundColor: canSend
+                  ? Theme.of(context).colorScheme.background
+                  : Theme.of(context).colorScheme.onPrimary,
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(12),
               ),
@@ -1174,10 +1151,7 @@ class _OffsetCorrectionState extends State<OffsetCorrection> {
         const SizedBox(width: 20),
         TextButton(
           onPressed: readChannelValues,
-          child: const Text(
-            'Read',
-            style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
-          ),
+          child: Text('Read', style: Theme.of(context).textTheme.headlineLarge),
         ),
       ],
     );
@@ -1192,10 +1166,7 @@ class _OffsetCorrectionState extends State<OffsetCorrection> {
       ),
       child: Text(
         "$title : $value",
-        style: const TextStyle(
-          color: Colors.white,
-          fontWeight: FontWeight.w600,
-        ),
+        style: Theme.of(context).textTheme.bodyMedium,
       ),
     );
   }

@@ -1,10 +1,12 @@
 import 'dart:io';
+import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
-import 'package:image_picker/image_picker.dart';
-import 'package:lactosure_connect_app/services/admin_services/adminservice.dart';
+import 'package:lactosure_connect_app/constant/loadingflw.dart';
+import 'package:lactosure_connect_app/lactosure/screens/home.dart';
+import 'package:lactosure_connect_app/lactosure/widgets/custom_button.dart';
+import 'package:lactosure_connect_app/services/admin_services/faceservice.dart';
 
 class FaceLoginPage extends StatefulWidget {
-
   const FaceLoginPage({super.key});
 
   @override
@@ -15,67 +17,183 @@ class _FaceLoginPageState extends State<FaceLoginPage> {
   File? image;
   bool isLoading = false;
   String result = "";
+  Color resultColor = Colors.transparent;
+  File? capturedImage;
+  CameraController? controller;
+  final Faceservice _service = Faceservice();
+  @override
+  void initState() {
+    super.initState();
+    initCamera();
+  }
 
-  final AdminService _service = AdminService();
+  Future<void> initCamera() async {
+    final cameras = await availableCameras();
 
-  Future<void> scanFace() async {
-    final picker = ImagePicker();
-
-    final XFile? picked = await picker.pickImage(
-      source: ImageSource.camera,
-      imageQuality: 85,
+    final frontCamera = cameras.firstWhere(
+      (camera) => camera.lensDirection == CameraLensDirection.front,
     );
 
-    if (picked == null) return;
+    controller = CameraController(frontCamera, ResolutionPreset.high);
+
+    await controller!.initialize();
+
+    if (mounted) {
+      setState(() {});
+    }
+  }
+
+  Future<void> scanFace() async {
+    if (controller == null || !controller!.value.isInitialized) return;
 
     setState(() {
-      image = File(picked.path);
       isLoading = true;
       result = "";
     });
 
-    final res = await _service.verifyFace(
-      image: image!,
-    );
+    final XFile file = await controller!.takePicture();
+    capturedImage = File(file.path);
+
+    setState(() {});
+
+    final res = await _service.verifyFace(image: capturedImage!);
+
+    // final bool match = res["match"] == true;
+    // final double score = (res["score"] as num).toDouble();
+
+    // setState(() {
+    //   isLoading = false;
+
+    //   if (match) {
+    //     result = "✅ Face Verified : ${score.toStringAsFixed(2)}";
+    //     resultColor = Theme.of(context).colorScheme.tertiary;
+    //   } else {
+    //     result = "❌ Face Not Matched : ${score.toStringAsFixed(2)}";
+    //     resultColor = Theme.of(context).colorScheme.error;
+    //   }
+    // });
+    final bool match = res["match"] == true;
+    final double score = (res["score"] as num).toDouble();
 
     setState(() {
       isLoading = false;
-      result = res["match"] == true
-          ? "✅ FACE VERIFIED (Score: ${res["score"]})"
-          : "❌ FACE NOT MATCHED";
+
+      if (match) {
+        result = "✅ Face Verified : ${score.toStringAsFixed(2)}";
+        resultColor = Theme.of(context).colorScheme.tertiary;
+      } else {
+        result = "❌ Face Not Matched : ${score.toStringAsFixed(2)}";
+        resultColor = Theme.of(context).colorScheme.error;
+      }
     });
+
+    if (match) {
+      // Wait 2 seconds so the user can see the success message.
+      await Future.delayed(const Duration(seconds: 2));
+
+      if (!mounted) return;
+
+      Navigator.push(
+        context,
+        MaterialPageRoute(builder: (_) => Dashboardhome()),
+      );
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text("Face Login")),
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            if (image != null)
-              ClipRRect(
-                borderRadius: BorderRadius.circular(15),
-                child: Image.file(image!, height: 220),
-              ),
+      body: SafeArea(
+        child: SingleChildScrollView(
+          child: Padding(
+            padding: const EdgeInsets.all(25),
+            child: Column(
+              children: [
+                const SizedBox(height: 20),
 
-            const SizedBox(height: 20),
+                Text(
+                  "Face Login",
+                  style: Theme.of(context).textTheme.displayMedium,
+                ),
 
-            Text(
-              result,
-              style: const TextStyle(fontSize: 18),
+                const SizedBox(height: 15),
+
+                Text(
+                  "Align your face inside the frame",
+                  style: Theme.of(context).textTheme.labelLarge,
+                ),
+
+                const SizedBox(height: 40),
+
+                Stack(
+                  alignment: Alignment.center,
+                  children: [
+                    Container(
+                      width: 260,
+                      height: 260,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        border: Border.all(color: Colors.cyanAccent, width: 4),
+                      ),
+                    ),
+
+                    ClipOval(
+                      child: SizedBox(
+                        width: 260,
+                        height: 260,
+                        child: capturedImage != null
+                            ? Image.file(capturedImage!, fit: BoxFit.cover)
+                            : (controller != null &&
+                                  controller!.value.isInitialized)
+                            ? CameraPreview(controller!)
+                            : const Center(child: RotatingFlower()),
+                      ),
+                    ),
+
+                    if (isLoading)
+                      const SizedBox(
+                        width: 280,
+                        height: 280,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 5,
+                          color: Colors.cyanAccent,
+                        ),
+                      ),
+                  ],
+                ),
+
+                const SizedBox(height: 40),
+
+                Center(
+                  child: CustomButton(
+                    text: isLoading ? "" : "Scan My Face",
+                    onPressed: isLoading ? null : scanFace,
+                    buttonclr: Theme.of(context).colorScheme.background,
+                    txtclr: Theme.of(context).colorScheme.onPrimary,
+                  ),
+                ),
+                const SizedBox(height: 30),
+                Center(
+                  child: isLoading
+                      ? Text(
+                          "Verifying your face...",
+                          style: Theme.of(context).textTheme.bodyMedium,
+                        )
+                      : result.isNotEmpty
+                      ? Text(
+                          result,
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            color: resultColor,
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        )
+                      : const SizedBox(),
+                ),
+              ],
             ),
-
-            const SizedBox(height: 20),
-
-            ElevatedButton(
-              onPressed: isLoading ? null : scanFace,
-              child: isLoading
-                  ? const CircularProgressIndicator()
-                  : const Text("Scan Face"),
-            ),
-          ],
+          ),
         ),
       ),
     );

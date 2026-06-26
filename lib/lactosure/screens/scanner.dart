@@ -32,21 +32,17 @@ class _ScannerPageState extends State<ScannerPage> {
   }
 
   Future<void> startScan() async {
-    // Request permissions
     await [
       Permission.bluetoothScan,
       Permission.bluetoothConnect,
       Permission.location,
     ].request();
 
-    // Check bluetooth state
     BluetoothAdapterState state = await FlutterBluePlus.adapterState.first;
 
     if (state != BluetoothAdapterState.on) {
-      // Ask user to turn on bluetooth
       await FlutterBluePlus.turnOn();
 
-      // Recheck state
       state = await FlutterBluePlus.adapterState.first;
 
       if (state != BluetoothAdapterState.on) {
@@ -102,10 +98,79 @@ class _ScannerPageState extends State<ScannerPage> {
       }
 
       // Connect
+      // await device.connect(
+      //   license: License.free,
+      //   timeout: const Duration(seconds: 15),
+      // );
+      // Connect
       await device.connect(
         license: License.free,
         timeout: const Duration(seconds: 15),
       );
+
+      connectedDevice = device;
+
+      // Listen for disconnect
+      device.connectionState.listen((state) {
+        if (state == BluetoothConnectionState.disconnected) {
+          connectedDevice = null;
+        }
+      });
+
+      // Discover services
+      List<BluetoothService> services = await device.discoverServices();
+
+      BluetoothCharacteristic? writeCharacteristic;
+      BluetoothCharacteristic? notifyCharacteristic;
+
+      // Find Write and Notify characteristics
+      for (BluetoothService service in services) {
+        for (BluetoothCharacteristic characteristic
+            in service.characteristics) {
+          print("Service: ${service.uuid}");
+          print("Characteristic: ${characteristic.uuid}");
+
+          if (characteristic.properties.write ||
+              characteristic.properties.writeWithoutResponse) {
+            writeCharacteristic ??= characteristic;
+          }
+
+          if (characteristic.properties.notify) {
+            notifyCharacteristic ??= characteristic;
+          }
+        }
+      }
+
+      // Start listening for response
+      if (notifyCharacteristic != null) {
+        await notifyCharacteristic.setNotifyValue(true);
+
+        notifyCharacteristic.lastValueStream.listen((value) {
+          String hex = value
+              .map((e) => e.toRadixString(16).padLeft(2, '0').toUpperCase())
+              .join(' ');
+
+          print("🥶🥶🥶Received: $hex");
+        });
+      }
+
+      // Send command
+      if (writeCharacteristic != null) {
+        List<int> command = [
+          0x40,
+          0x04,
+          0x55,
+          0x00,
+          0x00,
+          0x67, // LRC
+        ];
+
+        await writeCharacteristic.write(command, withoutResponse: false);
+
+        print("Command Sent");
+      } else {
+        print("No write characteristic found");
+      }
       connectedDevice = device;
       device.connectionState.listen((state) {
         if (state == BluetoothConnectionState.disconnected) {

@@ -3,6 +3,7 @@ import 'package:lactosure_connect_app/constant/theme.dart';
 import 'package:lactosure_connect_app/lactosure/screens/authen/login.dart';
 import 'package:lactosure_connect_app/lactosure/widgets/confirmdialog.dart';
 import 'package:lactosure_connect_app/lactosure/widgets/custom_button.dart';
+import 'package:lactosure_connect_app/services/authen_service.dart';
 import 'package:provider/provider.dart';
 
 class Settings extends StatefulWidget {
@@ -31,7 +32,7 @@ class _SettingsState extends State<Settings> {
     setState(() => _isLoading = true);
 
     try {
-      //await AuthService.logout();
+      await AuthService.logout();
 
       if (!mounted) return;
 
@@ -73,19 +74,21 @@ class _SettingsState extends State<Settings> {
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(16),
             ),
+            color:  Theme.of(context).colorScheme.primary,
             child: SwitchListTile(
               value: themeProvider.isDarkMode,
-              activeColor: Theme.of(context).primaryColor,
+              activeColor: Theme.of(context).colorScheme.background,
               secondary: Icon(
                 themeProvider.isDarkMode ? Icons.dark_mode : Icons.light_mode,
+                color: Theme.of(context).colorScheme.onPrimary,
               ),
               title: Text(
                 themeProvider.isDarkMode ? "Dark Mode" : "Light Mode",
-                style: Theme.of(context).textTheme.bodyMedium,
+                style: Theme.of(context).textTheme.headlineLarge,
               ),
               subtitle: Text(
                 "Toggle application theme",
-                style: Theme.of(context).textTheme.labelMedium,
+                style: Theme.of(context).textTheme.titleMedium,
               ),
               onChanged: (value) {
                 themeProvider.toggleTheme();

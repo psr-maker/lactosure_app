@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:lactosure_connect_app/constant/token_check.dart';
+import 'package:lactosure_connect_app/constant/global/token.dart';
 import 'package:lactosure_connect_app/lactosure/admin/adminscren.dart';
 import 'package:lactosure_connect_app/lactosure/screens/authen/login.dart';
 import 'package:lactosure_connect_app/lactosure/screens/home.dart';
+import 'package:lactosure_connect_app/services/authen_service.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -12,30 +13,27 @@ class SplashScreen extends StatefulWidget {
 }
 
 class _SplashScreenState extends State<SplashScreen> {
+  bool _navigated = false;
+
   @override
   void initState() {
     super.initState();
-
-    Future.delayed(const Duration(seconds: 3), () {
-      checkLogin();
-    });
+    checkLogin();
   }
 
-  void checkLogin() async {
-    await Future.delayed(const Duration(seconds: 2));
-
+  Future<void> checkLogin() async {
     try {
-      bool loggedIn = await TokenCheck.isLoggedIn();
+      final loggedIn = await TokenCheck.isLoggedIn();
 
-      if (!mounted) return;
+      if (!mounted || _navigated) return;
+      _navigated = true;
 
       if (loggedIn) {
-        String? email = await TokenCheck.getEmail();
+        final email = await TokenCheck.getEmail();
 
         if (!mounted) return;
 
-        // Admin
-        if (email != null && email.toLowerCase() == "admin") {
+        if (email != null && email.toLowerCase().contains("admin")) {
           Navigator.pushReplacement(
             context,
             MaterialPageRoute(builder: (_) => const AdminScreen()),
@@ -47,14 +45,14 @@ class _SplashScreenState extends State<SplashScreen> {
           );
         }
       } else {
+        await AuthService.logout();
+
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(builder: (_) => const LoginPage()),
         );
       }
     } catch (e) {
-      print("Splash Error: $e");
-
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(builder: (_) => const LoginPage()),

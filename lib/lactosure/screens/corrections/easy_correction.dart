@@ -230,11 +230,7 @@ class _EasyCorrectionState extends State<EasyCorrection> {
         const SizedBox(height: 10),
         Text(
           "Select Channel",
-          style: TextStyle(
-            color: Colors.white,
-            fontSize: 15,
-            fontWeight: FontWeight.w600,
-          ),
+          style: Theme.of(context).textTheme.headlineLarge,
         ),
         const SizedBox(height: 10),
 
@@ -243,11 +239,7 @@ class _EasyCorrectionState extends State<EasyCorrection> {
         const SizedBox(height: 20),
         Text(
           "Selected Channel Type : $selectedChannel",
-          style: const TextStyle(
-            color: Colors.white,
-            fontSize: 15,
-            fontWeight: FontWeight.bold,
-          ),
+          style: Theme.of(context).textTheme.headlineLarge,
         ),
         const SizedBox(height: 30),
         Row(
@@ -268,19 +260,15 @@ class _EasyCorrectionState extends State<EasyCorrection> {
             height: 50,
             child: ElevatedButton(
               style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.orange,
+                backgroundColor: Theme.of(context).colorScheme.background,
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(15),
                 ),
               ),
               onPressed: onSavePressed,
-              child: const Text(
+              child: Text(
                 "Save",
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 15,
-                  fontWeight: FontWeight.bold,
-                ),
+                style: Theme.of(context).textTheme.headlineLarge,
               ),
             ),
           ),
@@ -292,9 +280,9 @@ class _EasyCorrectionState extends State<EasyCorrection> {
   Widget _buildChannelSelector() {
     return DropdownButtonFormField<String>(
       value: selectedChannel,
-      dropdownColor: const Color(0xFF1E293B),
+      dropdownColor: Theme.of(context).colorScheme.primary,
 
-      style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w500),
+      style: Theme.of(context).textTheme.headlineLarge,
 
       decoration: InputDecoration(
         filled: true,
@@ -328,7 +316,7 @@ class _EasyCorrectionState extends State<EasyCorrection> {
     return TextField(
       controller: controller,
       keyboardType: TextInputType.number,
-      style: const TextStyle(color: Colors.white, fontSize: 15),
+      style: Theme.of(context).textTheme.headlineLarge,
       decoration: InputDecoration(
         labelText: label,
         labelStyle: const TextStyle(color: Color(0xFF94A3B8)),
@@ -338,7 +326,10 @@ class _EasyCorrectionState extends State<EasyCorrection> {
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(10),
-          borderSide: const BorderSide(color: Colors.white, width: 1.5),
+          borderSide: BorderSide(
+            color: Theme.of(context).colorScheme.onPrimary,
+            width: 1.5,
+          ),
         ),
       ),
     );
