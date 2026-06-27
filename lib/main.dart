@@ -28,7 +28,7 @@ class MyApp extends StatelessWidget {
                 ? ThemeMode.dark
                 : ThemeMode.light,
             home: const SplashScreen(),
-            // home: const AdminScreen(),
+            //home: const AdminScreen(),
             // home: RegisterUser(),
           );
         },

@@ -3,10 +3,14 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 import 'package:http/http.dart' as http;
+import 'package:lactosure_connect_app/database/database_helper.dart';
+import 'package:lactosure_connect_app/lactosure/screens/corrections/correction_report.dart';
 import 'package:lactosure_connect_app/lactosure/screens/corrections/easy_correction.dart';
 import 'package:lactosure_connect_app/lactosure/widgets/custom_button.dart';
+import 'package:lactosure_connect_app/models/correction_model.dart';
 import 'package:lactosure_connect_app/services/admin_services/adminservice.dart';
-import 'package:lactosure_connect_app/services/corr_history_model.dart';
+import 'package:lactosure_connect_app/models/corr_history_model.dart';
+import 'package:lactosure_connect_app/services/network_service.dart';
 
 class OffsetCorrection extends StatefulWidget {
   final BluetoothDevice device;
@@ -527,14 +531,25 @@ class _OffsetCorrectionState extends State<OffsetCorrection> {
 
       debugPrint("LOGOUT RESP => $logoutResp");
       await Future.delayed(const Duration(milliseconds: 300));
-      await updateMachineCorrection();
+      int localId = await saveCorrectionLocally();
 
-      if (mounted) {
-        CustomSnackbar.show(
-          context: context,
-          message: "Offset values written successfully",
-        );
+      bool internet = await NetworkService.hasInternet();
+
+      if (internet) {
+        bool success = await updateMachineCorrection();
+
+        if (success) {
+          await DatabaseHelper.instance.markAsSynced(localId);
+        }
       }
+      // await updateMachineCorrection();
+
+      // if (mounted) {
+      //   CustomSnackbar.show(
+      //     context: context,
+      //     message: "Offset values written successfully",
+      //   );
+      // }
     } catch (e) {
       debugPrint("WRITE ERROR => $e");
 
@@ -548,7 +563,36 @@ class _OffsetCorrectionState extends State<OffsetCorrection> {
     }
   }
 
-  Future<void> updateMachineCorrection() async {
+  Future<int> saveCorrectionLocally() async {
+    final correction = CorrectionModel(
+      correctionType: "COMMON",
+
+      societyId: selectedSocietyId,
+      machineId: selectedMachineId,
+      machineType: selectedMachineType,
+
+      channel: selectedChannel,
+
+      fat: finalWrittenValues["fat"],
+      snf: finalWrittenValues["snf"],
+      clr: finalWrittenValues["clr"],
+      protein: finalWrittenValues["protein"],
+      temp: finalWrittenValues["temp"],
+      water: finalWrittenValues["water"],
+
+      createdAt: DateTime.now().toIso8601String(),
+
+      synced: 0,
+    );
+
+    int id = await DatabaseHelper.instance.insertCorrection(correction);
+
+    print("✅ Saved into SQLite. ID = $id");
+
+    return id;
+  }
+
+  Future<bool> updateMachineCorrection() async {
     try {
       print("\n☁️ UPDATING CLOUD WITH CORRECTIONS...");
 
@@ -564,7 +608,7 @@ class _OffsetCorrectionState extends State<OffsetCorrection> {
           isError: true,
         );
 
-        return;
+        return false;
       }
 
       Map<String, dynamic> payload = {
@@ -626,6 +670,8 @@ class _OffsetCorrectionState extends State<OffsetCorrection> {
           context: context,
           message: "Correction Saved Successfully",
         );
+
+        return true;
       } else {
         print("❌ CLOUD UPDATE FAILED");
 
@@ -634,6 +680,8 @@ class _OffsetCorrectionState extends State<OffsetCorrection> {
           message: "Failed: ${response.statusCode}",
           isError: true,
         );
+
+        return false;
       }
     } catch (e) {
       print("❌ CLOUD UPDATE ERROR: $e");
@@ -643,6 +691,8 @@ class _OffsetCorrectionState extends State<OffsetCorrection> {
         message: "Error: $e",
         isError: true,
       );
+
+      return false;
     }
   }
 
@@ -848,6 +898,19 @@ class _OffsetCorrectionState extends State<OffsetCorrection> {
           },
         ),
         title: const Text('Machine Settings'),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.cloud_upload),
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => const CorrectionReport(),
+                ),
+              );
+            },
+          ),
+        ],
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
