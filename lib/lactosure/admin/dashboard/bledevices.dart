@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:lactosure_connect_app/constant/loadingflw.dart';
-import 'package:lactosure_connect_app/services/admin_services/adminservice.dart';
+import 'package:lactosure_connect_app/services/adminservice.dart';
 
 class Bledevice extends StatefulWidget {
   const Bledevice({super.key});
@@ -71,8 +71,7 @@ class _BledeviceState extends State<Bledevice> {
         return StatefulBuilder(
           builder: (context, setDialogState) {
             return AlertDialog(
-              backgroundColor: Theme.of(context).colorScheme.secondary,
-
+              backgroundColor: Theme.of(context).colorScheme.primary,
               title: Text(
                 "Add BLE Device",
                 style: Theme.of(context).textTheme.displaySmall,
@@ -223,7 +222,7 @@ class _BledeviceState extends State<Bledevice> {
         return StatefulBuilder(
           builder: (context, setDialogState) {
             return AlertDialog(
-              backgroundColor: Theme.of(context).colorScheme.secondary,
+              backgroundColor: Theme.of(context).colorScheme.primary,
               title: Text(
                 "Edit Device",
                 style: Theme.of(context).textTheme.displaySmall,
@@ -439,7 +438,7 @@ class _BledeviceState extends State<Bledevice> {
                 onPressed: _showAddDeviceDialog,
                 child: Text(
                   "+ Add Devices",
-                  style: Theme.of(context).textTheme.bodyMedium,
+                  style: Theme.of(context).textTheme.labelMedium,
                 ),
               ),
             ),
@@ -454,7 +453,7 @@ class _BledeviceState extends State<Bledevice> {
                         final device = filteredDevices[index];
 
                         return Card(
-                          color: Theme.of(context).colorScheme.secondary,
+                          color: Theme.of(context).colorScheme.primary,
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(10),
                           ),
@@ -470,23 +469,31 @@ class _BledeviceState extends State<Bledevice> {
                                   color: (device["isActive"] ?? false)
                                       ? Theme.of(context).colorScheme.tertiary
                                       : Theme.of(context).colorScheme.error,
-                                  width: 6,
+                                  width: 4,
                                 ),
                               ),
                             ),
                             child: ListTile(
                               leading: CircleAvatar(
+                                backgroundColor: Theme.of(
+                                  context,
+                                ).colorScheme.background,
                                 child: Text(
                                   device["bleName"]
                                       .toString()
                                       .substring(0, 1)
                                       .toUpperCase(),
+                                  style: Theme.of(
+                                    context,
+                                  ).textTheme.titleMedium,
                                 ),
                               ),
 
                               title: Text(
                                 device["bleName"] ?? "",
-                                style: Theme.of(context).textTheme.displaySmall,
+                                style: Theme.of(
+                                  context,
+                                ).textTheme.headlineLarge,
 
                                 overflow: TextOverflow.ellipsis,
                               ),
@@ -499,7 +506,7 @@ class _BledeviceState extends State<Bledevice> {
                                     device["macAddress"] ?? "",
                                     style: Theme.of(
                                       context,
-                                    ).textTheme.titleMedium,
+                                    ).textTheme.headlineMedium,
                                   ),
                                   SizedBox(height: 5),
                                   Text(
@@ -546,6 +553,9 @@ class _BledeviceState extends State<Bledevice> {
                                     final confirm = await showDialog<bool>(
                                       context: context,
                                       builder: (_) => AlertDialog(
+                                        backgroundColor: Theme.of(
+                                          context,
+                                        ).colorScheme.primary,
                                         title: const Text(
                                           "Delete Device",
                                           style: TextStyle(
@@ -620,7 +630,7 @@ class _BledeviceState extends State<Bledevice> {
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.secondary,
+        color: Theme.of(context).colorScheme.primary,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(color: Theme.of(context).colorScheme.onSecondary),
       ),

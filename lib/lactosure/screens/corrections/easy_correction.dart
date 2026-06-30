@@ -2,11 +2,12 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
+import 'package:lactosure_connect_app/services/dashboardservice.dart';
 
 class EasyCorrection extends StatefulWidget {
   final BluetoothDevice device;
-
-  const EasyCorrection({super.key, required this.device});
+  final int uid;
+  const EasyCorrection({super.key, required this.device, required this.uid});
 
   @override
   State<EasyCorrection> createState() => _EasyCorrectionState();
@@ -24,6 +25,8 @@ class _EasyCorrectionState extends State<EasyCorrection> {
   BluetoothCharacteristic? notifyCharacteristic;
   StreamSubscription<List<int>>? notifySubscription;
   List<int> buffer = [];
+  List<int> responseBuffer = [];
+  Timer? _idleTimer;
   Completer<List<int>>? frameCompleter;
 
   @override
@@ -32,81 +35,193 @@ class _EasyCorrectionState extends State<EasyCorrection> {
     initBle();
   }
 
+  // Future<void> initBle() async {
+  //   List<BluetoothService> services = await widget.device.discoverServices();
+
+  //   for (BluetoothService service in services) {
+  //     for (BluetoothCharacteristic characteristic in service.characteristics) {
+  //       // WRITE CHARACTERISTIC
+  //       if (characteristic.properties.write ||
+  //           characteristic.properties.writeWithoutResponse) {
+  //         writeCharacteristic = characteristic;
+  //       }
+
+  //       // NOTIFY CHARACTERISTIC
+  //       if (characteristic.properties.notify) {
+  //         notifyCharacteristic = characteristic;
+
+  //         await characteristic.setNotifyValue(true);
+
+  //         notifySubscription = notifyCharacteristic!.lastValueStream.listen((
+  //           data,
+  //         ) {
+  //           if (data.isEmpty) return;
+
+  //           debugPrint("RAW => $data");
+
+  //           buffer.addAll(data);
+
+  //           final frame = extractFrame(buffer);
+
+  //           if (frame != null) {
+  //             debugPrint(
+  //               "FRAME => ${frame.map((e) => e.toRadixString(16).padLeft(2, '0')).join(' ')}",
+  //             );
+
+  //             if (frameCompleter != null && !frameCompleter!.isCompleted) {
+  //               frameCompleter!.complete(frame);
+  //             }
+  //           }
+  //         });
+  //       }
+  //     }
+  //   }
+  // }
+
   Future<void> initBle() async {
     List<BluetoothService> services = await widget.device.discoverServices();
 
-    for (BluetoothService service in services) {
-      for (BluetoothCharacteristic characteristic in service.characteristics) {
-        // WRITE CHARACTERISTIC
+    for (final service in services) {
+      for (final characteristic in service.characteristics) {
         if (characteristic.properties.write ||
             characteristic.properties.writeWithoutResponse) {
           writeCharacteristic = characteristic;
         }
 
-        // NOTIFY CHARACTERISTIC
         if (characteristic.properties.notify) {
           notifyCharacteristic = characteristic;
 
           await characteristic.setNotifyValue(true);
 
-          notifySubscription = notifyCharacteristic!.lastValueStream.listen((
-            data,
-          ) {
-            if (data.isEmpty) return;
-
-            debugPrint("RAW => $data");
-
-            buffer.addAll(data);
-
-            final frame = extractFrame(buffer);
-
-            if (frame != null) {
-              debugPrint(
-                "FRAME => ${frame.map((e) => e.toRadixString(16).padLeft(2, '0')).join(' ')}",
-              );
-
-              if (frameCompleter != null && !frameCompleter!.isCompleted) {
-                frameCompleter!.complete(frame);
-              }
-            }
-          });
+          notifySubscription = characteristic.onValueReceived.listen(_onData);
         }
       }
     }
   }
 
-  List<int>? extractFrame(List<int> buffer) {
-    if (buffer.length < 3) return null;
+  void _onData(List<int> data) {
+    if (data.isEmpty) return;
 
-    if (buffer[0] != 0x40) {
+    debugPrint("RAW => $data");
+
+    responseBuffer.addAll(data);
+    buffer.addAll(data);
+
+    _resetIdleTimer();
+
+    _tryParseFrames();
+  }
+
+  void _tryParseFrames() {
+    List<int>? frame;
+
+    while ((frame = extractFrame(buffer)) != null) {
+      debugPrint("FRAME => $frame");
+
+      // DO NOT complete here
+      _handleFrame(frame!);
+    }
+  }
+
+  void _handleFrame(List<int> frame) {
+    responseBuffer.addAll(frame);
+  }
+
+  void _resetIdleTimer() {
+    _idleTimer?.cancel();
+
+    _idleTimer = Timer(const Duration(milliseconds: 300), () {
+      if (frameCompleter != null && !frameCompleter!.isCompleted) {
+        debugPrint("FINAL RESPONSE => $responseBuffer");
+
+        frameCompleter!.complete(List.from(responseBuffer));
+
+        responseBuffer.clear();
+        buffer.clear();
+      }
+    });
+  }
+
+  List<int>? extractFrame(List<int> buffer) {
+    // resync start byte
+    while (buffer.isNotEmpty && buffer[0] != 0x40) {
+      buffer.removeAt(0);
+    }
+
+    if (buffer.length < 2) return null;
+
+    int payloadLength = buffer[1];
+    int totalLength = payloadLength + 2;
+    debugPrint("Need $totalLength bytes, currently ${buffer.length}");
+    if (totalLength > 300) {
       buffer.removeAt(0);
       return null;
     }
 
-    int payloadLength = buffer[1];
+    if (buffer.length < totalLength) return null;
 
-    int totalLength = payloadLength + 2;
-
-    if (buffer.length < totalLength) {
-      return null;
-    }
-
-    List<int> frame = buffer.sublist(0, totalLength);
-
-    // REMOVE USED FRAME
+    final frame = buffer.sublist(0, totalLength);
     buffer.removeRange(0, totalLength);
 
     return frame;
   }
 
+  // List<int>? extractFrame(List<int> buffer) {
+  //   if (buffer.length < 3) return null;
+
+  //   if (buffer[0] != 0x40) {
+  //     buffer.removeAt(0);
+  //     return null;
+  //   }
+
+  //   int payloadLength = buffer[1];
+
+  //   int totalLength = payloadLength + 2;
+
+  //   if (buffer.length < totalLength) {
+  //     return null;
+  //   }
+
+  //   List<int> frame = buffer.sublist(0, totalLength);
+
+  //   // REMOVE USED FRAME
+  //   buffer.removeRange(0, totalLength);
+
+  //   return frame;
+  // }
+
+  // Future<List<int>> sendCommand(List<int> command) async {
+  //   frameCompleter = Completer<List<int>>();
+
+  //   await writeCharacteristic!.write(command, withoutResponse: false);
+
+  //   debugPrint("SENT => ${command.map((e) => e.toRadixString(16)).join(' ')}");
+
+  //   return frameCompleter!.future.timeout(const Duration(seconds: 8));
+  // }
   Future<List<int>> sendCommand(List<int> command) async {
+    if (writeCharacteristic == null) {
+      throw Exception("Write characteristic not found");
+    }
+
+    // Clear previous response data
+    buffer.clear();
+
+    // Cancel previous timer
+    _idleTimer?.cancel();
+
     frameCompleter = Completer<List<int>>();
 
     await writeCharacteristic!.write(command, withoutResponse: false);
 
     debugPrint("SENT => ${command.map((e) => e.toRadixString(16)).join(' ')}");
 
-    return frameCompleter!.future.timeout(const Duration(seconds: 8));
+    return await frameCompleter!.future.timeout(
+      const Duration(seconds: 10),
+      onTimeout: () {
+        throw TimeoutException("Device response timeout");
+      },
+    );
   }
 
   Future<void> onSavePressed() async {
@@ -162,13 +277,21 @@ class _EasyCorrectionState extends State<EasyCorrection> {
 
       // Exit
 
-      final exitCmd = await sendCommand(hex("40 04 01 0A 00 4F"));
+      await writeCharacteristic!.write(
+        hex("40 04 01 0A 00 4F"),
+        withoutResponse: false,
+      );
       print("🥶🥶🥶Exit calib");
-      print(exitCmd);
+      await Future.delayed(const Duration(seconds: 1));
 
-      await Future.delayed(const Duration(seconds: 3));
-    } catch (e) {
-      print("👍👍👍");
+      await DashboardService.saveCorrectionMethod(
+        uid: widget.uid,
+        corrMethod: "Easy Correction",
+        channel: selectedChannel,
+      );
+    } catch (e, s) {
+      print("❌ ERROR: $e");
+      print(s);
     }
   }
 

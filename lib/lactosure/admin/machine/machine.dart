@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:lactosure_connect_app/constant/loadingflw.dart';
 
-import 'package:lactosure_connect_app/services/admin_services/adminservice.dart';
+import 'package:lactosure_connect_app/services/adminservice.dart';
 
 class MachinePage extends StatefulWidget {
   final String searchText;
@@ -57,7 +57,7 @@ class _MachinePageState extends State<MachinePage> {
         return StatefulBuilder(
           builder: (context, setDialogState) {
             return AlertDialog(
-              backgroundColor: Theme.of(context).colorScheme.secondary,
+              backgroundColor: Theme.of(context).colorScheme.primary,
               title: Text(
                 "Add Machine",
                 style: Theme.of(context).textTheme.displaySmall,
@@ -104,7 +104,7 @@ class _MachinePageState extends State<MachinePage> {
                     /// Society Dropdown
                     DropdownButtonFormField<int>(
                       value: selectedSociety,
-                      dropdownColor: Theme.of(context).colorScheme.secondary,
+                      dropdownColor: Theme.of(context).colorScheme.primary,
                       style: Theme.of(context).textTheme.titleMedium,
                       decoration: InputDecoration(
                         labelText: "Select Society",
@@ -148,7 +148,7 @@ class _MachinePageState extends State<MachinePage> {
                     /// Machine Type Dropdown
                     DropdownButtonFormField<int>(
                       value: selectedMachineType,
-                      dropdownColor: Theme.of(context).colorScheme.secondary,
+                      dropdownColor: Theme.of(context).colorScheme.primary,
                       style: Theme.of(context).textTheme.titleMedium,
                       decoration: InputDecoration(
                         labelText: "Select Machine Type",
@@ -268,14 +268,13 @@ class _MachinePageState extends State<MachinePage> {
     int selectedMachineType = item["mtid"];
     bool status = item["status"];
     final borderColor = Theme.of(context).colorScheme.background;
-
     showDialog(
       context: context,
       builder: (_) {
         return StatefulBuilder(
           builder: (context, setDialogState) {
             return AlertDialog(
-              backgroundColor: Theme.of(context).colorScheme.secondary,
+              backgroundColor: Theme.of(context).colorScheme.primary,
 
               title: Text(
                 "Edit Machine",
@@ -323,7 +322,7 @@ class _MachinePageState extends State<MachinePage> {
 
                     DropdownButtonFormField<int>(
                       value: selectedSociety,
-                      dropdownColor: Theme.of(context).colorScheme.secondary,
+                      dropdownColor: Theme.of(context).colorScheme.primary,
                       decoration: InputDecoration(
                         labelText: "Society",
                         labelStyle: Theme.of(context).textTheme.titleMedium,
@@ -364,7 +363,7 @@ class _MachinePageState extends State<MachinePage> {
 
                     DropdownButtonFormField<int>(
                       value: selectedMachineType,
-                      dropdownColor: Theme.of(context).colorScheme.secondary,
+                      dropdownColor: Theme.of(context).colorScheme.primary,
                       style: Theme.of(context).textTheme.titleMedium,
                       decoration: InputDecoration(
                         labelText: "Machine Type",
@@ -474,6 +473,7 @@ class _MachinePageState extends State<MachinePage> {
     final confirm = await showDialog<bool>(
       context: context,
       builder: (_) => AlertDialog(
+        backgroundColor: Theme.of(context).colorScheme.primary,
         title: const Text(
           "Delete Machine",
           style: TextStyle(
@@ -589,7 +589,7 @@ class _MachinePageState extends State<MachinePage> {
                       final item = filteredMachines[index];
 
                       return Card(
-                        color: Theme.of(context).colorScheme.secondary,
+                        color: Theme.of(context).colorScheme.primary,
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(10),
                         ),
@@ -605,7 +605,7 @@ class _MachinePageState extends State<MachinePage> {
                                 color: item["status"]
                                     ? Theme.of(context).colorScheme.tertiary
                                     : Theme.of(context).colorScheme.error,
-                                width: 6,
+                                width: 4,
                               ),
                             ),
                           ),
@@ -621,21 +621,21 @@ class _MachinePageState extends State<MachinePage> {
                             ),
                             title: Text(
                               item["machineCode"],
-                              style: Theme.of(context).textTheme.displaySmall,
+                              style: Theme.of(context).textTheme.headlineLarge,
                             ),
                             subtitle: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 const SizedBox(height: 5),
                                 Text(
-                                  item["societyName"],
+                                  item["machineType"],
                                   style: Theme.of(
                                     context,
-                                  ).textTheme.titleMedium,
+                                  ).textTheme.headlineMedium,
                                 ),
                                 const SizedBox(height: 5),
                                 Text(
-                                  item["machineType"],
+                                  item["societyName"],
                                   style: Theme.of(
                                     context,
                                   ).textTheme.titleMedium,
@@ -693,7 +693,7 @@ class _MachinePageState extends State<MachinePage> {
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.secondary,
+        color: Theme.of(context).colorScheme.primary,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(color: Theme.of(context).colorScheme.onSecondary),
       ),

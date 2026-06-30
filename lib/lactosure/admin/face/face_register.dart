@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:lactosure_connect_app/constant/loadingflw.dart';
 import 'package:lactosure_connect_app/lactosure/widgets/custom_button.dart';
-import 'package:lactosure_connect_app/services/admin_services/faceservice.dart';
+import 'package:lactosure_connect_app/services/faceservice.dart';
 
 class FaceEnrollment extends StatefulWidget {
   final int userId;

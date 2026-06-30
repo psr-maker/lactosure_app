@@ -8,14 +8,15 @@ import 'package:lactosure_connect_app/lactosure/screens/corrections/correction_r
 import 'package:lactosure_connect_app/lactosure/screens/corrections/easy_correction.dart';
 import 'package:lactosure_connect_app/lactosure/widgets/custom_button.dart';
 import 'package:lactosure_connect_app/models/correction_model.dart';
-import 'package:lactosure_connect_app/services/admin_services/adminservice.dart';
+import 'package:lactosure_connect_app/services/adminservice.dart';
 import 'package:lactosure_connect_app/models/corr_history_model.dart';
+import 'package:lactosure_connect_app/services/dashboardservice.dart';
 import 'package:lactosure_connect_app/services/network_service.dart';
 
 class OffsetCorrection extends StatefulWidget {
   final BluetoothDevice device;
-
-  const OffsetCorrection({super.key, required this.device});
+  final int uid;
+  const OffsetCorrection({super.key, required this.device, required this.uid});
 
   @override
   State<OffsetCorrection> createState() => _OffsetCorrectionState();
@@ -531,6 +532,12 @@ class _OffsetCorrectionState extends State<OffsetCorrection> {
 
       debugPrint("LOGOUT RESP => $logoutResp");
       await Future.delayed(const Duration(milliseconds: 300));
+
+      await DashboardService.saveCorrectionMethod(
+        uid: widget.uid,
+        corrMethod: "Common Offset",
+        channel: selectedChannel,
+      );
       int localId = await saveCorrectionLocally();
 
       bool internet = await NetworkService.hasInternet();
@@ -542,14 +549,6 @@ class _OffsetCorrectionState extends State<OffsetCorrection> {
           await DatabaseHelper.instance.markAsSynced(localId);
         }
       }
-      // await updateMachineCorrection();
-
-      // if (mounted) {
-      //   CustomSnackbar.show(
-      //     context: context,
-      //     message: "Offset values written successfully",
-      //   );
-      // }
     } catch (e) {
       debugPrint("WRITE ERROR => $e");
 
@@ -586,7 +585,11 @@ class _OffsetCorrectionState extends State<OffsetCorrection> {
     );
 
     int id = await DatabaseHelper.instance.insertCorrection(correction);
-
+    CustomSnackbar.show(
+      context: context,
+      message: "Correction Saved Locally",
+      isError: false,
+    );
     print("✅ Saved into SQLite. ID = $id");
 
     return id;
@@ -904,9 +907,7 @@ class _OffsetCorrectionState extends State<OffsetCorrection> {
             onPressed: () {
               Navigator.push(
                 context,
-                MaterialPageRoute(
-                  builder: (_) => const CorrectionReport(),
-                ),
+                MaterialPageRoute(builder: (_) => const CorrectionReport()),
               );
             },
           ),
@@ -1006,7 +1007,7 @@ class _OffsetCorrectionState extends State<OffsetCorrection> {
             ]
             /// Easy Correction UI
             else ...[
-              EasyCorrection(device: widget.device),
+              EasyCorrection(device: widget.device, uid: widget.uid),
             ],
           ],
         ),
@@ -1117,7 +1118,7 @@ class _OffsetCorrectionState extends State<OffsetCorrection> {
   InputDecoration _dropdownDecoration(String label) {
     return InputDecoration(
       labelText: label,
-      labelStyle: TextStyle(color: Theme.of(context).colorScheme.secondary),
+      labelStyle: Theme.of(context).textTheme.headlineMedium,
       enabledBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(10),
         borderSide: const BorderSide(color: Color(0xFF334155)),

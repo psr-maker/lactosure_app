@@ -155,9 +155,12 @@ class ThemeProvider extends ChangeNotifier {
         backgroundColor: deepGreen,
         foregroundColor: background,
         elevation: 0,
-        iconTheme: IconThemeData(color: Color(0xFF9BB1D8), size: 20),
+        iconTheme: IconThemeData(
+          color: Color.fromARGB(255, 7, 218, 218),
+          size: 20,
+        ),
         titleTextStyle: TextStyle(
-          color: Color(0xFF9BB1D8),
+          color: Color.fromARGB(255, 7, 218, 218),
           fontSize: 18,
           fontWeight: FontWeight.bold,
           letterSpacing: 0.5,
@@ -215,6 +218,7 @@ class ThemeProvider extends ChangeNotifier {
           fontWeight: FontWeight.bold,
           color: deepGreen,
         ),
+        //******
         titleMedium: TextStyle(
           fontSize: 13,
           fontWeight: FontWeight.w700,
@@ -225,7 +229,7 @@ class ThemeProvider extends ChangeNotifier {
           fontWeight: FontWeight.w600,
           color: Color.fromARGB(255, 25, 77, 38),
         ),
-
+        //*****
         bodyLarge: TextStyle(
           fontSize: 18,
           fontWeight: FontWeight.w700,
@@ -248,10 +252,11 @@ class ThemeProvider extends ChangeNotifier {
           fontWeight: FontWeight.w700,
           color: Color(0xFF9BB1D8),
         ),
+        //*****
         labelMedium: TextStyle(
           fontSize: 12,
           fontWeight: FontWeight.w600,
-          color: Colors.black,
+          color: Color.fromARGB(255, 255, 157, 10),
         ),
         labelSmall: TextStyle(
           fontSize: 10,

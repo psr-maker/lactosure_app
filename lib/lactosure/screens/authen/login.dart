@@ -3,10 +3,10 @@ import 'package:lactosure_connect_app/lactosure/admin/adminscren.dart';
 import 'package:lactosure_connect_app/lactosure/admin/face/verify_face.dart';
 import 'package:lactosure_connect_app/lactosure/screens/authen/forget_pw.dart';
 import 'package:lactosure_connect_app/lactosure/screens/authen/register.dart';
-import 'package:lactosure_connect_app/lactosure/screens/home.dart';
+import 'package:lactosure_connect_app/lactosure/screens/dashboard/home.dart';
 import 'package:lactosure_connect_app/lactosure/widgets/custom_button.dart';
 import 'package:lactosure_connect_app/lactosure/widgets/custom_textfield.dart';
-import 'package:lactosure_connect_app/services/admin_services/faceservice.dart';
+import 'package:lactosure_connect_app/services/faceservice.dart';
 import 'package:lactosure_connect_app/services/authen_service.dart';
 
 class LoginPage extends StatefulWidget {

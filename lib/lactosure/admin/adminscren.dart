@@ -28,7 +28,7 @@ class _AdminScreenState extends State<AdminScreen> {
 
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: selectedIndex,
-        backgroundColor: Theme.of(context).colorScheme.secondary,
+        backgroundColor: Theme.of(context).colorScheme.primary,
         selectedItemColor: Theme.of(context).colorScheme.onPrimary,
         unselectedItemColor: Theme.of(context).colorScheme.onSecondary,
         unselectedFontSize: 12,
@@ -37,7 +37,7 @@ class _AdminScreenState extends State<AdminScreen> {
         unselectedIconTheme: IconThemeData(size: 12),
         type: BottomNavigationBarType.fixed,
         onTap: (index) {
-          setState(() {
+          setState(() { 
             selectedIndex = index;
           });
         },

@@ -2,9 +2,9 @@ import 'dart:io';
 import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
 import 'package:lactosure_connect_app/constant/loadingflw.dart';
-import 'package:lactosure_connect_app/lactosure/screens/home.dart';
+import 'package:lactosure_connect_app/lactosure/screens/dashboard/home.dart';
 import 'package:lactosure_connect_app/lactosure/widgets/custom_button.dart';
-import 'package:lactosure_connect_app/services/admin_services/faceservice.dart';
+import 'package:lactosure_connect_app/services/faceservice.dart';
 
 class FaceLoginPage extends StatefulWidget {
   const FaceLoginPage({super.key});

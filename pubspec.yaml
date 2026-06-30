@@ -36,7 +36,7 @@ dependencies:
   cupertino_icons: ^1.0.8
   http: ^1.6.0
   shared_preferences: ^2.5.5
-  permission_handler: ^12.0.1
+  permission_handler: ^12.0.3
   flutter_blue_plus: ^2.3.4
   provider: ^6.1.5+1
   camera: ^0.12.0+1
@@ -49,6 +49,9 @@ dependencies:
   sqflite: ^2.4.2+1
   path: ^1.9.1
   connectivity_plus: ^7.2.0
+  pdf: ^3.12.0
+  path_provider: ^2.1.6
+  printing: ^5.14.3
 
 dev_dependencies:
   flutter_test:

@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:lactosure_connect_app/constant/loadingflw.dart';
 import 'package:lactosure_connect_app/lactosure/admin/dashboard/bledevices.dart';
 import 'package:lactosure_connect_app/lactosure/admin/dashboard/settings.dart';
-import 'package:lactosure_connect_app/services/admin_services/dashboardservice.dart';
+import 'package:lactosure_connect_app/services/dashboardservice.dart';
 
 class DashboardPage extends StatefulWidget {
   const DashboardPage({super.key});
@@ -21,7 +21,7 @@ class _DashboardPageState extends State<DashboardPage> {
   }
 
   Future<void> loadDashboard() async {
-    final data = await AdmdashboardService.getDashboard();
+    final data = await DashboardService.getDashboard();
     setState(() {
       dashboard = data;
       isLoading = false;
@@ -38,7 +38,7 @@ class _DashboardPageState extends State<DashboardPage> {
       appBar: AppBar(
         title: Text('Dashboard'),
         actions: [
-            IconButton(
+          IconButton(
             icon: const Icon(Icons.bluetooth),
             onPressed: () {
               Navigator.push(
@@ -149,14 +149,17 @@ class _DashboardPageState extends State<DashboardPage> {
   Widget _statCard(String title, String value, IconData icon) {
     return Container(
       decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.secondary,
+       color: Theme.of(context).colorScheme.primary,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Theme.of(context).colorScheme.onSecondary),
       ),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(icon, size: 25,color: Theme.of(context).colorScheme.onSecondary),
+          Icon(
+            icon,
+            size: 25,
+            color: Theme.of(context).colorScheme.onSecondary,
+          ),
 
           const SizedBox(height: 10),
 

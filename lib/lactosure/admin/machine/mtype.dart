@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:lactosure_connect_app/constant/loadingflw.dart';
-import 'package:lactosure_connect_app/services/admin_services/adminservice.dart';
+import 'package:lactosure_connect_app/services/adminservice.dart';
 
 class MachineTypePage extends StatefulWidget {
   final String searchText;
@@ -40,14 +40,13 @@ class _MachineTypePageState extends State<MachineTypePage> {
     final controller = TextEditingController();
     bool status = true;
     final borderColor = Theme.of(context).colorScheme.background;
-
     showDialog(
       context: context,
       builder: (_) {
         return StatefulBuilder(
           builder: (context, setDialogState) {
             return AlertDialog(
-              backgroundColor: Theme.of(context).colorScheme.secondary,
+              backgroundColor: Theme.of(context).colorScheme.primary,
               title: Text(
                 "Add Machine Type",
                 style: Theme.of(context).textTheme.displaySmall,
@@ -155,7 +154,7 @@ class _MachineTypePageState extends State<MachineTypePage> {
         return StatefulBuilder(
           builder: (context, setDialogState) {
             return AlertDialog(
-              backgroundColor: Theme.of(context).colorScheme.secondary,
+              backgroundColor: Theme.of(context).colorScheme.primary,
 
               title: Text(
                 "Edit Machine Type",
@@ -258,6 +257,7 @@ class _MachineTypePageState extends State<MachineTypePage> {
     final confirm = await showDialog<bool>(
       context: context,
       builder: (_) => AlertDialog(
+        backgroundColor: Theme.of(context).colorScheme.primary,
         title: const Text(
           "Delete Machine Type",
           style: TextStyle(
@@ -359,47 +359,57 @@ class _MachineTypePageState extends State<MachineTypePage> {
                     itemBuilder: (context, index) {
                       final item = filteredMachineTypes[index];
 
-                      return ListTile(
-                        leading: CircleAvatar(
-                          backgroundColor: Theme.of(
-                            context,
-                          ).colorScheme.background,
+                      return Card(
+                        color: Theme.of(context).colorScheme.primary,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        margin: const EdgeInsets.symmetric(
+                          horizontal: 10,
+                          vertical: 5,
+                        ),
+                        child: ListTile(
+                          leading: CircleAvatar(
+                            backgroundColor: Theme.of(
+                              context,
+                            ).colorScheme.background,
 
-                          child: Text(item["mType"][0].toUpperCase()),
-                        ),
-                        title: Text(
-                          item["mType"],
-                          style: Theme.of(context).textTheme.titleMedium,
-                        ),
-                        subtitle: Text(
-                          item["status"] ? "Active" : "Inactive",
-                          style: TextStyle(
-                            color: item["status"]
-                                ? Theme.of(context).colorScheme.tertiary
-                                : Theme.of(context).colorScheme.error,
-                            fontWeight: FontWeight.bold,
-                            fontSize: 12,
+                            child: Text(item["mType"][0].toUpperCase()),
                           ),
-                        ),
-                        trailing: PopupMenuButton(
-                          iconColor: Theme.of(context).colorScheme.onPrimary,
-                          color: Theme.of(context).colorScheme.onSecondary,
-                          itemBuilder: (_) => const [
-                            PopupMenuItem(value: "edit", child: Text("Edit")),
-                            PopupMenuItem(
-                              value: "delete",
-                              child: Text("Delete"),
+                          title: Text(
+                            item["mType"],
+                            style: Theme.of(context).textTheme.titleMedium,
+                          ),
+                          subtitle: Text(
+                            item["status"] ? "Active" : "Inactive",
+                            style: TextStyle(
+                              color: item["status"]
+                                  ? Theme.of(context).colorScheme.tertiary
+                                  : Theme.of(context).colorScheme.error,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 12,
                             ),
-                          ],
-                          onSelected: (value) {
-                            if (value == "edit") {
-                              _showEditMachineTypeDialog(item);
-                            }
+                          ),
+                          trailing: PopupMenuButton(
+                            iconColor: Theme.of(context).colorScheme.onPrimary,
+                            color: Theme.of(context).colorScheme.onSecondary,
+                            itemBuilder: (_) => const [
+                              PopupMenuItem(value: "edit", child: Text("Edit")),
+                              PopupMenuItem(
+                                value: "delete",
+                                child: Text("Delete"),
+                              ),
+                            ],
+                            onSelected: (value) {
+                              if (value == "edit") {
+                                _showEditMachineTypeDialog(item);
+                              }
 
-                            if (value == "delete") {
-                              _deleteMachineType(item);
-                            }
-                          },
+                              if (value == "delete") {
+                                _deleteMachineType(item);
+                              }
+                            },
+                          ),
                         ),
                       );
                     },
@@ -414,7 +424,7 @@ class _MachineTypePageState extends State<MachineTypePage> {
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.secondary,
+        color: Theme.of(context).colorScheme.primary,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(color: Theme.of(context).colorScheme.onSecondary),
       ),

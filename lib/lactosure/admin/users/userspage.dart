@@ -150,21 +150,16 @@ class _UsersPageState extends State<UsersPage>
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.secondary,
+        color: Theme.of(context).colorScheme.primary,
         borderRadius: BorderRadius.circular(16),
         border: Border(
           left: BorderSide(
-            color: isApproved ? Colors.green : Colors.orange,
-            width: 6,
+            color: isApproved
+                ? Theme.of(context).colorScheme.tertiary
+                : Theme.of(context).colorScheme.background,
+            width: 4,
           ),
         ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.08),
-            blurRadius: 6,
-            offset: const Offset(0, 2),
-          ),
-        ],
       ),
       child: Padding(
         padding: const EdgeInsets.all(14),
@@ -200,12 +195,12 @@ class _UsersPageState extends State<UsersPage>
                       height: 40,
                       width: 40,
                       decoration: BoxDecoration(
-                        color: Theme.of(context).colorScheme.primary,
+                        color: Theme.of(context).colorScheme.secondary,
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: Icon(
-                        Icons.face_retouching_natural,
-                        color: Theme.of(context).colorScheme.onPrimary,
+                        Icons.tag_faces_sharp,
+                        color: Theme.of(context).colorScheme.primary,
                         size: 22,
                       ),
                     ),
@@ -213,7 +208,7 @@ class _UsersPageState extends State<UsersPage>
               ],
             ),
 
-            const SizedBox(height: 10),
+            const SizedBox(height: 5),
 
             /// Email
             Row(
@@ -221,13 +216,13 @@ class _UsersPageState extends State<UsersPage>
                 Icon(
                   Icons.email_outlined,
                   size: 18,
-                  color: Theme.of(context).colorScheme.onSecondary,
+                  color: Theme.of(context).colorScheme.background,
                 ),
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(
                     user["email"] ?? "",
-                    style: Theme.of(context).textTheme.titleMedium,
+                    style: Theme.of(context).textTheme.labelMedium,
                   ),
                 ),
               ],

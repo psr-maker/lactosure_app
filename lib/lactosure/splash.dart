@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:lactosure_connect_app/constant/global/token.dart';
 import 'package:lactosure_connect_app/lactosure/admin/adminscren.dart';
 import 'package:lactosure_connect_app/lactosure/screens/authen/login.dart';
-import 'package:lactosure_connect_app/lactosure/screens/home.dart';
+import 'package:lactosure_connect_app/lactosure/screens/dashboard/home.dart';
 import 'package:lactosure_connect_app/services/authen_service.dart';
 
 class SplashScreen extends StatefulWidget {
