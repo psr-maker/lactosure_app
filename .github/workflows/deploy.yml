@@ -26,25 +26,23 @@ jobs:
       - name: Build Flutter Web
         run: flutter build web --release
 
-      - name: Upload Web Files to VPS
+      - name: Upload Web Files
         uses: appleboy/scp-action@v0.1.7
         with:
           host: 168.231.121.19
           username: root
           password: ${{ secrets.VPS_PASSWORD }}
           source: "build/web/*"
-          target: "/tmp/lactosure_web"
-          strip_components: 1
+          target: "/var/www/lactosure_web"
+          strip_components: 2
 
-      - name: Deploy to Nginx
+      - name: Set Permissions
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: 168.231.121.19
           username: root
           password: ${{ secrets.VPS_PASSWORD }}
           script: |
-            rm -rf /var/www/lactosure_web/*
-            cp -r /tmp/lactosure_web/* /var/www/lactosure_web/
             chown -R www-data:www-data /var/www/lactosure_web
+            chmod -R 755 /var/www/lactosure_web
             systemctl reload nginx
-            echo "Flutter Web deployed successfully!"
