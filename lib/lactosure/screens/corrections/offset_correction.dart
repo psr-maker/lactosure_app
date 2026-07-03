@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 import 'package:http/http.dart' as http;
+import 'package:lactosure_connect_app/constant/loadingflw.dart';
 import 'package:lactosure_connect_app/database/database_helper.dart';
 import 'package:lactosure_connect_app/lactosure/screens/corrections/correction_report.dart';
 import 'package:lactosure_connect_app/lactosure/screens/corrections/easy_correction.dart';
@@ -56,6 +57,7 @@ class _OffsetCorrectionState extends State<OffsetCorrection> {
   String? selectedMachineId;
   String? selectedMachineType;
   bool isLoading = true;
+  bool isSaving = false;
 
   List<dynamic> machines = [];
   List<dynamic> societies = [];
@@ -491,6 +493,11 @@ class _OffsetCorrectionState extends State<OffsetCorrection> {
   }
 
   Future<void> sendOffsetValues() async {
+    if (!mounted) return;
+    setState(() {
+      isSaving = true;
+    });
+
     try {
       buffer.clear();
 
@@ -558,6 +565,12 @@ class _OffsetCorrectionState extends State<OffsetCorrection> {
           message: "Write failed: $e",
           isError: true,
         );
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          isSaving = false;
+        });
       }
     }
   }
@@ -1202,14 +1215,16 @@ class _OffsetCorrectionState extends State<OffsetCorrection> {
                 borderRadius: BorderRadius.circular(12),
               ),
             ),
-            onPressed: canSend ? sendOffsetValues : null,
-            child: Text(
-              'Send',
-              style: TextStyle(
-                color: canSend ? Colors.white : Colors.grey,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
+            onPressed: canSend && !isSaving ? sendOffsetValues : null,
+            child: isSaving
+                ? const SizedBox(width: 20, height: 20, child: RotatingFlower())
+                : Text(
+                    'Send',
+                    style: TextStyle(
+                      color: canSend ? Colors.white : Colors.grey,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
           ),
         ),
         const SizedBox(width: 20),

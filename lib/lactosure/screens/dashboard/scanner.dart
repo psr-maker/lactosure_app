@@ -23,6 +23,11 @@ class _ScannerPageState extends State<ScannerPage> {
   bool _isConnecting = false;
   String? _connectingMac;
 
+  BluetoothCharacteristic? foundWriteCharacteristic;
+  BluetoothCharacteristic? foundNotifyCharacteristic;
+  Completer<List<int>> responseCompleter = Completer<List<int>>();
+  List<int> buffer = [];
+
   @override
   void initState() {
     super.initState();
@@ -176,12 +181,10 @@ class _ScannerPageState extends State<ScannerPage> {
           connectedDevice = null;
         }
       });
-
       List<BluetoothService> services = await device.discoverServices();
-      BluetoothCharacteristic? writeCharacteristic;
-      BluetoothCharacteristic? notifyCharacteristic;
-      Completer<List<int>> responseCompleter = Completer<List<int>>();
-      List<int> buffer = [];
+
+      BluetoothCharacteristic? foundWriteCharacteristic;
+      BluetoothCharacteristic? foundNotifyCharacteristic;
 
       // Find characteristics
       for (final service in services) {
@@ -198,14 +201,26 @@ class _ScannerPageState extends State<ScannerPage> {
           );
 
           if (c.properties.write || c.properties.writeWithoutResponse) {
-            writeCharacteristic = c;
+            foundWriteCharacteristic = c;
           }
 
           if (c.properties.notify || c.properties.indicate) {
-            notifyCharacteristic = c;
+            foundNotifyCharacteristic = c;
           }
         }
       }
+
+      if (foundWriteCharacteristic == null) {
+        throw Exception("No write characteristic found");
+      }
+
+      if (foundNotifyCharacteristic == null) {
+        throw Exception("No notify characteristic found");
+      }
+
+      // Save globally
+      writeCharacteristic = foundWriteCharacteristic;
+      notifyCharacteristic = foundNotifyCharacteristic;
 
       if (writeCharacteristic == null) {
         throw Exception("No write characteristic found");
@@ -215,37 +230,48 @@ class _ScannerPageState extends State<ScannerPage> {
         throw Exception("No notify characteristic found");
       }
 
-      // Enable notifications
-      await notifyCharacteristic.setNotifyValue(true);
+      late StreamSubscription notifySubscription;
 
-      // Give the device time to enable notifications
-      await Future.delayed(const Duration(seconds: 3));
-
-      // Listen for response
-      notifyCharacteristic.lastValueStream.listen((data) {
+      notifySubscription = notifyCharacteristic!.lastValueStream.listen((data) {
         if (data.isEmpty) return;
 
         buffer.addAll(data);
 
-        String hex = buffer
-            .map((e) => e.toRadixString(16).padLeft(2, '0').toUpperCase())
-            .join(' ');
+        print(
+          "📩 RESPONSE : ${data.map((e) => e.toRadixString(16).padLeft(2, '0')).join(' ')}",
+        );
 
-        print("📩 RESPONSE : $hex");
+        // Reset Count response
+        if (buffer.length >= 6 &&
+            buffer[0] == 0x40 &&
+            buffer[1] == 0x04 &&
+            buffer[2] == 0x55 &&
+            buffer[3] == 0x00 &&
+            buffer[4] == 0x01) {
+          if (!responseCompleter.isCompleted) {
+            responseCompleter.complete(List.from(buffer));
+          }
+          return;
+        }
 
-        // Complete on first packet received
-        if (!responseCompleter.isCompleted) {
-          responseCompleter.complete(List.from(buffer));
+        // System Information response
+        if (buffer.length >= 17) {
+          if (!responseCompleter.isCompleted) {
+            responseCompleter.complete(List.from(buffer));
+          }
         }
       });
 
+      await notifyCharacteristic!.setNotifyValue(true);
+
+      await Future.delayed(const Duration(milliseconds: 500));
       // Login command
       List<int> command = [0x40, 0x04, 0x55, 0x00, 0x00];
       command.add(calculateLRC(command));
-
-      await writeCharacteristic.write(
+      buffer.clear();
+      await writeCharacteristic!.write(
         command,
-        withoutResponse: writeCharacteristic.properties.writeWithoutResponse,
+        withoutResponse: writeCharacteristic!.properties.writeWithoutResponse,
       );
 
       print(
@@ -253,12 +279,79 @@ class _ScannerPageState extends State<ScannerPage> {
       );
 
       // Wait for response
-      List<int> response = await responseCompleter.future.timeout(
-        const Duration(seconds: 10),
-      );
+      List<int>? response;
+
+      try {
+        response = await responseCompleter.future.timeout(
+          const Duration(seconds: 10),
+        );
+      } on TimeoutException {
+        CustomSnackbar.show(
+          context: context,
+          message: "Cannot find System Information",
+          isError: true,
+        );
+
+        await device.disconnect();
+        return;
+      }
 
       print("✅ FINAL RESPONSE : $response");
+
+      // Reset Count response
+      if (response.length >= 6 &&
+          response[0] == 0x40 &&
+          response[1] == 0x04 &&
+          response[2] == 0x55 &&
+          response[3] == 0x00 &&
+          response[4] == 0x01) {
+        showDialog(
+          context: context,
+          barrierDismissible: false,
+          builder: (_) => AlertDialog(
+            backgroundColor: Theme.of(context).colorScheme.primary,
+            title: Text(
+              "Reset Count",
+              style: Theme.of(context).textTheme.displaySmall,
+            ),
+            content: Text(
+              "Please Reset Count to get System Information.",
+              style: Theme.of(context).textTheme.labelMedium,
+            ),
+            actions: [
+              TextButton(
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => Dashboardhome()),
+                  );
+                },
+                child: Text(
+                  "OK",
+                  style: Theme.of(context).textTheme.headlineLarge,
+                ),
+              ),
+            ],
+          ),
+        );
+
+        // Keep BLE connected
+        return;
+      }
+
+      // Invalid response
+      if (response.length < 17) {
+        CustomSnackbar.show(
+          context: context,
+          message: "Cannot find System Information",
+          isError: true,
+        );
+
+        await device.disconnect();
+        return;
+      }
       parseSystemInfo(response);
+      // parseSystemInfo(response);
       await loadMachineDetails();
       connectedDevice = device;
 

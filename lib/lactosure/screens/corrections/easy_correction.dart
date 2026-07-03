@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
+import 'package:lactosure_connect_app/constant/loadingflw.dart';
 import 'package:lactosure_connect_app/services/dashboardservice.dart';
 
 class EasyCorrection extends StatefulWidget {
@@ -28,6 +29,7 @@ class _EasyCorrectionState extends State<EasyCorrection> {
   List<int> responseBuffer = [];
   Timer? _idleTimer;
   Completer<List<int>>? frameCompleter;
+  bool isSaving = false;
 
   @override
   void initState() {
@@ -166,39 +168,6 @@ class _EasyCorrectionState extends State<EasyCorrection> {
     return frame;
   }
 
-  // List<int>? extractFrame(List<int> buffer) {
-  //   if (buffer.length < 3) return null;
-
-  //   if (buffer[0] != 0x40) {
-  //     buffer.removeAt(0);
-  //     return null;
-  //   }
-
-  //   int payloadLength = buffer[1];
-
-  //   int totalLength = payloadLength + 2;
-
-  //   if (buffer.length < totalLength) {
-  //     return null;
-  //   }
-
-  //   List<int> frame = buffer.sublist(0, totalLength);
-
-  //   // REMOVE USED FRAME
-  //   buffer.removeRange(0, totalLength);
-
-  //   return frame;
-  // }
-
-  // Future<List<int>> sendCommand(List<int> command) async {
-  //   frameCompleter = Completer<List<int>>();
-
-  //   await writeCharacteristic!.write(command, withoutResponse: false);
-
-  //   debugPrint("SENT => ${command.map((e) => e.toRadixString(16)).join(' ')}");
-
-  //   return frameCompleter!.future.timeout(const Duration(seconds: 8));
-  // }
   Future<List<int>> sendCommand(List<int> command) async {
     if (writeCharacteristic == null) {
       throw Exception("Write characteristic not found");
@@ -225,6 +194,11 @@ class _EasyCorrectionState extends State<EasyCorrection> {
   }
 
   Future<void> onSavePressed() async {
+    if (!mounted) return;
+    setState(() {
+      isSaving = true;
+    });
+
     try {
       if (writeCharacteristic == null || notifyCharacteristic == null) {
         print("❌ BLE not ready");
@@ -292,6 +266,12 @@ class _EasyCorrectionState extends State<EasyCorrection> {
     } catch (e, s) {
       print("❌ ERROR: $e");
       print(s);
+    } finally {
+      if (mounted) {
+        setState(() {
+          isSaving = false;
+        });
+      }
     }
   }
 
@@ -388,11 +368,17 @@ class _EasyCorrectionState extends State<EasyCorrection> {
                   borderRadius: BorderRadius.circular(15),
                 ),
               ),
-              onPressed: onSavePressed,
-              child: Text(
-                "Save",
-                style: Theme.of(context).textTheme.headlineLarge,
-              ),
+              onPressed: isSaving ? null : onSavePressed,
+              child: isSaving
+                  ? const SizedBox(
+                      width: 24,
+                      height: 24,
+                      child: RotatingFlower(),
+                    )
+                  : Text(
+                      "Save",
+                      style: Theme.of(context).textTheme.headlineLarge,
+                    ),
             ),
           ),
         ),

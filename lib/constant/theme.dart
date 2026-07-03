@@ -190,7 +190,7 @@ class ThemeProvider extends ChangeNotifier {
           fontWeight: FontWeight.bold,
           color: Colors.white,
         ),
-
+        //*****
         displaySmall: TextStyle(
           fontSize: 18,
           fontWeight: FontWeight.bold,

@@ -157,26 +157,26 @@ class _LoginPageState extends State<LoginPage> {
                           }
                           // User
                           else {
-                            final face = await Faceservice.getFaceStatus();
+                            // final face = await Faceservice.getFaceStatus();
 
-                            if (!mounted) return;
+                            // if (!mounted) return;
 
-                            if (face["status"] == true) {
-                              Navigator.pushReplacement(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (_) => const FaceLoginPage(),
-                                ),
-                              );
-                            } else {
-                              Navigator.pushReplacement(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (_) => const Dashboardhome(),
-                                ),
-                              );
-                            }
+                            // if (face["status"] == true) {
+                            //   Navigator.pushReplacement(
+                            //     context,
+                            //     MaterialPageRoute(
+                            //       builder: (_) => const FaceLoginPage(),
+                            //     ),
+                            //   );
+                            // } else {
+                            Navigator.pushReplacement(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) => const Dashboardhome(),
+                              ),
+                            );
                           }
+                          //}
                         } else {
                           CustomSnackbar.show(
                             context: context,
