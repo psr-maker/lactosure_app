@@ -20,30 +20,31 @@ jobs:
           channel: stable
           cache: true
 
-      - name: Get Packages
+      - name: Install Dependencies
         run: flutter pub get
 
       - name: Build Flutter Web
         run: flutter build web --release
 
-      - name: Upload build to VPS
+      - name: Upload Web Files to VPS
         uses: appleboy/scp-action@v0.1.7
         with:
-          host: ${{ secrets.VPS_HOST }}
-          username: ${{ secrets.VPS_USERNAME }}
-          key: ${{ secrets.VPS_SSH_KEY }}
+          host: 168.231.121.19
+          username: root
+          password: ${{ secrets.VPS_PASSWORD }}
           source: "build/web/*"
-          target: "/tmp/lactosure"
+          target: "/tmp/lactosure_web"
+          strip_components: 1
 
-      - name: Deploy Website
-        uses: appleboy/ssh-action@v1.2.0
+      - name: Deploy to Nginx
+        uses: appleboy/ssh-action@v1.0.3
         with:
-          host: ${{ secrets.VPS_HOST }}
-          username: ${{ secrets.VPS_USERNAME }}
-          key: ${{ secrets.VPS_SSH_KEY }}
+          host: 168.231.121.19
+          username: root
+          password: ${{ secrets.VPS_PASSWORD }}
           script: |
-            sudo rm -rf /var/www/lactosure_web/*
-            sudo cp -r /tmp/lactosure/build/web/* /var/www/lactosure_web/
-            sudo chown -R www-data:www-data /var/www/lactosure_web
-            sudo systemctl reload nginx
-            echo "Deployment Completed"
+            rm -rf /var/www/lactosure_web/*
+            cp -r /tmp/lactosure_web/* /var/www/lactosure_web/
+            chown -R www-data:www-data /var/www/lactosure_web
+            systemctl reload nginx
+            echo "Flutter Web deployed successfully!"
