@@ -82,22 +82,23 @@ class _FaceEnrollmentState extends State<FaceEnrollment> {
         _isLoading = false;
         isEnrolled = success;
       });
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            success ? "Face Registered Successfully" : "Registration Failed",
-          ),
-        ),
+      CustomSnackbar.show(
+        context: context,
+        message: success
+            ? "Face Registered Successfully"
+            : "Registration Failed",
+        isError: !success,
       );
     } catch (e) {
       setState(() {
         _isLoading = false;
       });
 
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text(e.toString())));
+      CustomSnackbar.show(
+        context: context,
+        message: e.toString(),
+        isError: true,
+      );
     }
   }
 
@@ -181,8 +182,10 @@ class _FaceEnrollmentState extends State<FaceEnrollment> {
                       status = value;
                     });
                   } else {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text("Failed to update status.")),
+                    CustomSnackbar.show(
+                      context: context,
+                      message: "Failed to update status.",
+                      isError: true,
                     );
                   }
                 },

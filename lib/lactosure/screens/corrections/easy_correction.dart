@@ -2,7 +2,9 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
+import 'package:lactosure_connect_app/constant/global/system_info.dart';
 import 'package:lactosure_connect_app/constant/loadingflw.dart';
+import 'package:lactosure_connect_app/lactosure/widgets/custom_button.dart';
 import 'package:lactosure_connect_app/services/dashboardservice.dart';
 
 class EasyCorrection extends StatefulWidget {
@@ -36,49 +38,6 @@ class _EasyCorrectionState extends State<EasyCorrection> {
     super.initState();
     initBle();
   }
-
-  // Future<void> initBle() async {
-  //   List<BluetoothService> services = await widget.device.discoverServices();
-
-  //   for (BluetoothService service in services) {
-  //     for (BluetoothCharacteristic characteristic in service.characteristics) {
-  //       // WRITE CHARACTERISTIC
-  //       if (characteristic.properties.write ||
-  //           characteristic.properties.writeWithoutResponse) {
-  //         writeCharacteristic = characteristic;
-  //       }
-
-  //       // NOTIFY CHARACTERISTIC
-  //       if (characteristic.properties.notify) {
-  //         notifyCharacteristic = characteristic;
-
-  //         await characteristic.setNotifyValue(true);
-
-  //         notifySubscription = notifyCharacteristic!.lastValueStream.listen((
-  //           data,
-  //         ) {
-  //           if (data.isEmpty) return;
-
-  //           debugPrint("RAW => $data");
-
-  //           buffer.addAll(data);
-
-  //           final frame = extractFrame(buffer);
-
-  //           if (frame != null) {
-  //             debugPrint(
-  //               "FRAME => ${frame.map((e) => e.toRadixString(16).padLeft(2, '0')).join(' ')}",
-  //             );
-
-  //             if (frameCompleter != null && !frameCompleter!.isCompleted) {
-  //               frameCompleter!.complete(frame);
-  //             }
-  //           }
-  //         });
-  //       }
-  //     }
-  //   }
-  // }
 
   Future<void> initBle() async {
     List<BluetoothService> services = await widget.device.discoverServices();
@@ -201,7 +160,11 @@ class _EasyCorrectionState extends State<EasyCorrection> {
 
     try {
       if (writeCharacteristic == null || notifyCharacteristic == null) {
-        print("❌ BLE not ready");
+        CustomSnackbar.show(
+          context: context,
+          message: "BLE connection not ready. Please try again.",
+          isError: true,
+        );
         return;
       }
       buffer.clear();
@@ -262,10 +225,31 @@ class _EasyCorrectionState extends State<EasyCorrection> {
         uid: widget.uid,
         corrMethod: "Easy Correction",
         channel: selectedChannel,
+        sId: systemInfo.societyId,
+        mId: systemInfo.machineId,
+        model: systemInfo.model,
+        dongleId: systemInfo.dongleId,
+        fat: double.tryParse(fatController.text),
+        snf: double.tryParse(snfController.text),
+        clr: null,
+        prt: null,
+        temp: null,
+        wtr: null,
+      );
+
+      CustomSnackbar.show(
+        context: context,
+        message: "Easy correction saved successfully",
+        isError: false,
       );
     } catch (e, s) {
       print("❌ ERROR: $e");
       print(s);
+      CustomSnackbar.show(
+        context: context,
+        message: "Error saving correction: ${e.toString()}",
+        isError: true,
+      );
     } finally {
       if (mounted) {
         setState(() {

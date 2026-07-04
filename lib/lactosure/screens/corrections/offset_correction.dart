@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 import 'package:http/http.dart' as http;
+import 'package:lactosure_connect_app/constant/global/system_info.dart';
 import 'package:lactosure_connect_app/constant/loadingflw.dart';
 import 'package:lactosure_connect_app/database/database_helper.dart';
 import 'package:lactosure_connect_app/lactosure/screens/corrections/correction_report.dart';
@@ -58,6 +59,7 @@ class _OffsetCorrectionState extends State<OffsetCorrection> {
   String? selectedMachineType;
   bool isLoading = true;
   bool isSaving = false;
+  bool isReading = false;
 
   List<dynamic> machines = [];
   List<dynamic> societies = [];
@@ -223,6 +225,11 @@ class _OffsetCorrectionState extends State<OffsetCorrection> {
   }
 
   Future<void> readChannelValues() async {
+    if (!mounted) return;
+    setState(() {
+      isReading = true;
+    });
+
     try {
       buffer.clear();
 
@@ -277,6 +284,12 @@ class _OffsetCorrectionState extends State<OffsetCorrection> {
       debugPrint("LOGOUT RESP => $logoutResp");
     } catch (e) {
       debugPrint("ERROR => $e");
+    } finally {
+      if (mounted) {
+        setState(() {
+          isReading = false;
+        });
+      }
     }
   }
 
@@ -544,6 +557,16 @@ class _OffsetCorrectionState extends State<OffsetCorrection> {
         uid: widget.uid,
         corrMethod: "Common Offset",
         channel: selectedChannel,
+        sId: selectedSocietyId,
+        mId: selectedMachineId,
+        model: selectedMachineType,
+        dongleId: systemInfo.dongleId,
+        fat: finalWrittenValues['fat'],
+        snf: finalWrittenValues['snf'],
+        clr: finalWrittenValues['clr'],
+        prt: finalWrittenValues['protein'],
+        temp: finalWrittenValues['temp'],
+        wtr: finalWrittenValues['water'],
       );
       int localId = await saveCorrectionLocally();
 
@@ -1229,8 +1252,10 @@ class _OffsetCorrectionState extends State<OffsetCorrection> {
         ),
         const SizedBox(width: 20),
         TextButton(
-          onPressed: readChannelValues,
-          child: Text('Read', style: Theme.of(context).textTheme.headlineLarge),
+          onPressed: isReading ? null : readChannelValues,
+          child: isReading
+              ? const SizedBox(width: 24, height: 24, child: RotatingFlower())
+              : Text('Read', style: Theme.of(context).textTheme.headlineLarge),
         ),
       ],
     );

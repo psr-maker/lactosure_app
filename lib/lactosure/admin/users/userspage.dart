@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:lactosure_connect_app/constant/loadingflw.dart';
 import 'package:lactosure_connect_app/lactosure/admin/face/face_register.dart';
+import 'package:lactosure_connect_app/lactosure/widgets/custom_button.dart';
 import 'package:lactosure_connect_app/services/authen_service.dart';
 
 class UsersPage extends StatefulWidget {
@@ -40,9 +41,11 @@ class _UsersPageState extends State<UsersPage>
       });
     } catch (e) {
       setState(() => isLoading = false);
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text(e.toString())));
+      CustomSnackbar.show(
+        context: context,
+        message: e.toString(),
+        isError: true,
+      );
     }
   }
 
@@ -71,9 +74,11 @@ class _UsersPageState extends State<UsersPage>
   Future<void> approveUser(int id) async {
     bool success = await AuthService.approveUser(id);
     if (success) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text("User Approved")));
+      CustomSnackbar.show(
+        context: context,
+        message: "User Approved",
+        isError: false,
+      );
       loadUsers();
     }
   }
@@ -81,10 +86,31 @@ class _UsersPageState extends State<UsersPage>
   Future<void> rejectUser(int id) async {
     bool success = await AuthService.rejectUser(id);
     if (success) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text("User Rejected")));
+      CustomSnackbar.show(
+        context: context,
+        message: "User Rejected",
+        isError: false,
+      );
+    }
+  }
+
+  Future<void> deleteUser(int id) async {
+    bool success = await AuthService.deleteUser(id);
+
+    if (success) {
+      CustomSnackbar.show(
+        context: context,
+        message: "User deleted successfully",
+        isError: false,
+      );
+
       loadUsers();
+    } else {
+      CustomSnackbar.show(
+        context: context,
+        message: "Failed to delete user",
+        isError: true,
+      );
     }
   }
 
@@ -287,7 +313,72 @@ class _UsersPageState extends State<UsersPage>
         padding: const EdgeInsets.all(10),
         itemCount: list.length,
         itemBuilder: (context, index) {
-          return userCard(list[index], type);
+          final user = list[index];
+
+          return Dismissible(
+            key: ValueKey(user["uId"]),
+
+            direction: DismissDirection.endToStart,
+
+            background: Container(
+              margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+              decoration: BoxDecoration(
+                color: Theme.of(context).colorScheme.error,
+                borderRadius: BorderRadius.circular(16),
+              ),
+              alignment: Alignment.centerRight,
+              padding: const EdgeInsets.only(right: 20),
+              child: Icon(
+                Icons.delete,
+                color: Theme.of(context).colorScheme.onPrimary,
+                size: 30,
+              ),
+            ),
+
+            confirmDismiss: (direction) async {
+              return await showDialog<bool>(
+                    context: context,
+                    builder: (context) => AlertDialog(
+                      backgroundColor: Theme.of(context).colorScheme.primary,
+                      title: Text(
+                        "Delete User",
+                        style: Theme.of(context).textTheme.headlineLarge,
+                      ),
+                      content: Text(
+                        "Are you sure you want to delete ${user["name"]}?",
+                      ),
+                      actions: [
+                        TextButton(
+                          onPressed: () => Navigator.pop(context, false),
+                          child: Text(
+                            "Cancel",
+                            style: Theme.of(context).textTheme.bodySmall,
+                          ),
+                        ),
+                        ElevatedButton(
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Theme.of(
+                              context,
+                            ).colorScheme.error,
+                          ),
+                          onPressed: () => Navigator.pop(context, true),
+                          child: Text(
+                            "Delete",
+                            style: Theme.of(context).textTheme.titleMedium,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ) ??
+                  false;
+            },
+
+            onDismissed: (direction) {
+              deleteUser(user["uId"]);
+            },
+
+            child: userCard(user, type),
+          );
         },
       ),
     );

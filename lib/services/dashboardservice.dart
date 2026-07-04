@@ -18,15 +18,35 @@ class DashboardService {
 
   static Future<bool> saveCorrectionMethod({
     required int uid,
+    String? sId,
+    String? mId,
+    required String? model,
+    required String? dongleId,
+    required double? fat,
+    required double? snf,
+    required double? clr,
+    required double? prt,
+    required double? temp,
+    required double? wtr,
     required String corrMethod,
     required String channel,
   }) async {
-    try { 
+    try {
       final response = await http.post(
         Uri.parse("$baseUrl/Dashboard/CorrMethodSave"),
         headers: {"Content-Type": "application/json"},
         body: jsonEncode({
           "uId": uid,
+          "sId": sId,
+          "mId": mId,
+          "model": model,
+          "dongleId": dongleId,
+          "fat": fat,
+          "snf": snf,
+          "clr": clr,
+          "prt": prt,
+          "temp": temp,
+          "wtr": wtr,
           "corrMethod": corrMethod,
           "channel": channel,
         }),
@@ -42,17 +62,21 @@ class DashboardService {
     }
   }
 
-    static Future<List<dynamic>> getCorrMethodHistory(int uid) async {
+  static Future<List<dynamic>> getCorrMethodHistory(int uid) async {
     try {
       final response = await http.get(
         Uri.parse("$baseUrl/Dashboard/GetCorrMethodHistory/$uid"),
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: {"Content-Type": "application/json"},
       );
 
       if (response.statusCode == 200) {
-        return jsonDecode(response.body);
+        final json = jsonDecode(response.body);
+
+        if (json["success"] == true) {
+          return json["data"] as List<dynamic>;
+        }
+
+        return [];
       } else {
         print("GET HISTORY FAILED: ${response.statusCode}");
         print(response.body);

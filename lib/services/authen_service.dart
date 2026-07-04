@@ -164,6 +164,14 @@ class AuthService {
     return response.statusCode == 200;
   }
 
+  static Future<bool> deleteUser(int id) async {
+  final response = await http.delete(
+    Uri.parse('$url/auth/delete-user/$id'),
+  );
+
+  return response.statusCode == 200;
+}
+
   static Future<Map<String, dynamic>> forgotPasswordSendOtp(
     String email,
   ) async {

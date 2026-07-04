@@ -80,7 +80,19 @@ class PdfService {
               color: PdfColors.white,
               fontWeight: pw.FontWeight.bold,
             ),
-            headers: const ["Correction Method", "Channel", "Date"],
+            headers: const [
+              "Correction Method",
+              "Channel",
+              "Date",
+              "SID",
+              "MID",
+              "Dongle ID",
+              "Model",
+              "Fat/SNF/CLR",
+              "PRT",
+              "Temp",
+              "WTR",
+            ],
             data: history.map((item) {
               final dt = DateTime.parse(item["date"]);
 
@@ -89,7 +101,30 @@ class PdfService {
                   "${dt.month.toString().padLeft(2, '0')}-"
                   "${dt.year}";
 
-              return [item["corrMethod"] ?? "-", item["channel"] ?? "-", date];
+              final sid = _formatPdfValue(item["sId"] ?? item["sid"]);
+              final mid = _formatPdfValue(item["mId"] ?? item["mid"]);
+              final dongleId = _formatPdfValue(item["dongleId"]);
+              final model = _formatPdfValue(item["model"]);
+              final fat = _formatPdfValue(item["fat"]);
+              final snf = _formatPdfValue(item["snf"]);
+              final clr = _formatPdfValue(item["clr"]);
+              final prt = _formatPdfValue(item["prt"]);
+              final temp = _formatPdfValue(item["temp"]);
+              final wtr = _formatPdfValue(item["wtr"]);
+
+              return [
+                item["corrMethod"] ?? "-",
+                item["channel"] ?? "-",
+                date,
+                sid,
+                mid,
+                dongleId,
+                model,
+                "Fat: $fat\nSNF: $snf\nCLR: $clr",
+                prt,
+                temp,
+                wtr,
+              ];
             }).toList(),
           ),
         ],
@@ -149,6 +184,14 @@ class PdfService {
         ],
       ),
     );
+  }
+
+  static String _formatPdfValue(dynamic value) {
+    if (value == null) return "-";
+    if (value is num) {
+      return value.toStringAsFixed(2);
+    }
+    return value.toString();
   }
 
   static Future<Directory> _getSaveDirectory() async {
@@ -372,6 +415,14 @@ class AdminPdfService {
     return manage.isGranted;
   }
 
+  static String _formatPdfValue(dynamic value) {
+    if (value == null) return "-";
+    if (value is num) {
+      return value.toStringAsFixed(2);
+    }
+    return value.toString();
+  }
+
   static List<pw.Widget> _buildCorrectionHistory(List<dynamic> history) {
     final Map<String, List<dynamic>> grouped = {};
 
@@ -406,7 +457,19 @@ class AdminPdfService {
                 color: PdfColors.white,
                 fontWeight: pw.FontWeight.bold,
               ),
-              headers: const ["Method", "Channel", "Date"],
+              headers: const [
+                "Method",
+                "Channel",
+                "Date",
+                "SID",
+                "MID",
+                "Dongle ID",
+                "Model",
+                "Fat/SNF/CLR",
+                "PRT",
+                "Temp",
+                "WTR",
+              ],
               data: list.map((e) {
                 final dt = DateTime.parse(e["date"]);
 
@@ -415,7 +478,30 @@ class AdminPdfService {
                     "${dt.month.toString().padLeft(2, '0')}-"
                     "${dt.year}";
 
-                return [e["corrMethod"] ?? "-", e["channel"] ?? "-", date];
+                final sid = _formatPdfValue(e["sId"] ?? e["sid"]);
+                final mid = _formatPdfValue(e["mId"] ?? e["mid"]);
+                final dongleId = _formatPdfValue(e["dongleId"]);
+                final model = _formatPdfValue(e["model"]);
+                final fat = _formatPdfValue(e["fat"]);
+                final snf = _formatPdfValue(e["snf"]);
+                final clr = _formatPdfValue(e["clr"]);
+                final prt = _formatPdfValue(e["prt"]);
+                final temp = _formatPdfValue(e["temp"]);
+                final wtr = _formatPdfValue(e["wtr"]);
+
+                return [
+                  e["corrMethod"] ?? "-",
+                  e["channel"] ?? "-",
+                  date,
+                  sid,
+                  mid,
+                  dongleId,
+                  model,
+                  "Fat: $fat\nSNF: $snf\nCLR: $clr",
+                  prt,
+                  temp,
+                  wtr,
+                ];
               }).toList(),
             ),
           ],
