@@ -3,7 +3,9 @@ import 'package:lactosure_connect_app/constant/loadingflw.dart';
 import 'package:lactosure_connect_app/services/adminservice.dart';
 
 class SocietyPage extends StatefulWidget {
-  const SocietyPage({super.key});
+  const SocietyPage({super.key, this.showAppBar = true});
+
+  final bool showAppBar;
 
   @override
   State<SocietyPage> createState() => _SocietyPageState();
@@ -20,6 +22,12 @@ class _SocietyPageState extends State<SocietyPage> {
   void initState() {
     super.initState();
     loadSocieties();
+  }
+
+  @override
+  void dispose() {
+    searchController.dispose();
+    super.dispose();
   }
 
   Future<void> loadSocieties() async {
@@ -46,9 +54,9 @@ class _SocietyPageState extends State<SocietyPage> {
   void searchSociety(String value) {
     setState(() {
       filteredSocieties = societies.where((society) {
-        final name = society["sName"].toString().toLowerCase();
+        final name = (society["sName"] ?? "").toString().toLowerCase();
 
-        final code = society["scode"].toString().toLowerCase();
+        final code = (society["societyCode"] ?? "").toString().toLowerCase();
 
         return name.contains(value.toLowerCase()) ||
             code.contains(value.toLowerCase());
@@ -355,6 +363,166 @@ class _SocietyPageState extends State<SocietyPage> {
         .where((s) => s["status"] == false)
         .length;
 
+    // Dashboard View
+    if (!widget.showAppBar) {
+      return Scaffold(
+        body: Padding(
+          padding: const EdgeInsets.all(10),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              SizedBox(height: 10),
+              Row(
+                children: [
+                  Text(
+                    "All Societies",
+                    style: Theme.of(context).textTheme.headlineMedium,
+                  ),
+
+                  const Spacer(),
+
+                  SizedBox(
+                    width: 250,
+                    child: TextField(
+                      controller: searchController,
+                      style: Theme.of(context).textTheme.titleMedium,
+                      decoration: InputDecoration(
+                        hintText: "Search Society",
+                        hintStyle: Theme.of(context).textTheme.titleMedium,
+                        prefixIcon: Icon(
+                          Icons.search,
+                          color: Theme.of(context).colorScheme.onPrimary,
+                        ),
+                        border: InputBorder.none,
+                      ),
+                      onChanged: searchSociety,
+                    ),
+                  ),
+
+                  const SizedBox(width: 20),
+                  ElevatedButton.icon(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Theme.of(context).colorScheme.background,
+                      foregroundColor: Theme.of(context).colorScheme.onPrimary,
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 15,
+                        vertical: 15,
+                      ),
+                    ),
+                    onPressed: _showAddSocietyDialog,
+                    icon: const Icon(Icons.add),
+                    label: const Text("Add Society"),
+                  ),
+                ],
+              ),
+
+              const SizedBox(height: 15),
+              // Total Card Row
+              Row(
+                children: [
+                  Expanded(
+                    child: _buildStatCard(
+                      "Total",
+                      totalSocieties.toString(),
+                      Colors.blue,
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: _buildStatCard(
+                      "Active",
+                      activeSocieties.toString(),
+                      Colors.green,
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: _buildStatCard(
+                      "Inactive",
+                      inactiveSocieties.toString(),
+                      Colors.red,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 15),
+              Text(
+                "Society List",
+                style: Theme.of(context).textTheme.headlineLarge,
+              ),
+              const SizedBox(height: 15),
+
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 20,
+                  vertical: 14,
+                ),
+                decoration: BoxDecoration(
+                  color: Theme.of(context).colorScheme.secondary,
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Row(
+                  children: [
+                    Expanded(
+                      flex: 1,
+                      child: Text(
+                        "Society Name",
+                        style: Theme.of(context).textTheme.bodyLarge,
+                      ),
+                    ),
+
+                    Expanded(
+                      flex: 1,
+                      child: Text(
+                        "Society ID",
+                        style: Theme.of(context).textTheme.bodyLarge,
+                      ),
+                    ),
+
+                    Expanded(
+                      flex: 1,
+                      child: Text(
+                        "Status",
+                        style: Theme.of(context).textTheme.bodyLarge,
+                      ),
+                    ),
+
+                    Expanded(
+                      flex: 1,
+                      child: Text(
+                        "Edit",
+                        style: Theme.of(context).textTheme.bodyLarge,
+                      ),
+                    ),
+
+                    Expanded(
+                      flex: 1,
+                      child: Text(
+                        "Delete",
+                        style: Theme.of(context).textTheme.bodyLarge,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+
+              const SizedBox(height: 8),
+
+              Expanded(
+                child: ListView.builder(
+                  itemCount: filteredSocieties.length,
+                  itemBuilder: (context, index) {
+                    return desktopRow(filteredSocieties[index]);
+                  },
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    // Mobile View
     return Scaffold(
       appBar: AppBar(
         title: isSearching
@@ -622,6 +790,104 @@ class _SocietyPageState extends State<SocietyPage> {
           ),
           const SizedBox(height: 5),
           Text(title, style: Theme.of(context).textTheme.titleMedium),
+        ],
+      ),
+    );
+  }
+
+  Widget desktopRow(dynamic society) {
+    return Container(
+      height: 60,
+      padding: const EdgeInsets.symmetric(horizontal: 20),
+      decoration: BoxDecoration(
+        border: Border(
+          bottom: BorderSide(color: Colors.grey.shade300, width: 1),
+        ),
+      ),
+      child: Row(
+        children: [
+          Expanded(child: Text(society["sName"] ?? "")),
+
+          Expanded(
+            child: Text(
+              society["societyCode"]?.toString() ?? "",
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+
+          Expanded(
+            child: Text(
+              society["status"] == true ? "Active" : "Inactive",
+              style: TextStyle(
+                color: society["status"] == true
+                    ? Theme.of(context).colorScheme.tertiary
+                    : Theme.of(context).colorScheme.error,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ),
+
+          Expanded(
+            child: IconButton(
+              icon: Icon(
+                Icons.edit,
+                color: Theme.of(context).colorScheme.onTertiary,
+              ),
+              onPressed: () => _showEditSocietyDialog(society),
+            ),
+          ),
+
+          Expanded(
+            child: Center(
+              child: IconButton(
+                icon: Icon(
+                  Icons.delete,
+                  color: Theme.of(context).colorScheme.error,
+                ),
+                onPressed: () async {
+                  final confirmed = await showDialog<bool>(
+                    context: context,
+                    builder: (context) => AlertDialog(
+                      backgroundColor: Theme.of(context).colorScheme.primary,
+                      title: const Text(
+                        "Delete Society",
+                        style: TextStyle(
+                          color: Colors.red,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      content: const Text(
+                        "If you delete this society, all machines under this society will also be deleted permanently.\n\nDo you want to continue?",
+                      ),
+                      actions: [
+                        TextButton(
+                          onPressed: () => Navigator.pop(context, false),
+                          child: const Text("Cancel"),
+                        ),
+                        ElevatedButton(
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.red,
+                          ),
+                          onPressed: () => Navigator.pop(context, true),
+                          child: const Text("Delete"),
+                        ),
+                      ],
+                    ),
+                  );
+
+                  if (confirmed != true) return;
+
+                  final result = await AdminService.deleteSociety(
+                    society["sid"],
+                  );
+
+                  if (result["success"] == true) {
+                    await loadSocieties();
+                  }
+                },
+              ),
+            ),
+          ),
         ],
       ),
     );

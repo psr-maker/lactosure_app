@@ -1,14 +1,20 @@
 import 'package:fl_chart/fl_chart.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:lactosure_connect_app/constant/loadingflw.dart';
 import 'package:lactosure_connect_app/lactosure/admin/dashboard/bledevices.dart';
 import 'package:lactosure_connect_app/lactosure/admin/dashboard/settings.dart';
+import 'package:lactosure_connect_app/lactosure/admin/machine/machinepage.dart';
+import 'package:lactosure_connect_app/lactosure/admin/society/societypage.dart';
+import 'package:lactosure_connect_app/lactosure/admin/users/userspage.dart';
 import 'package:lactosure_connect_app/lactosure/widgets/custom_button.dart';
 import 'package:lactosure_connect_app/services/dashboardservice.dart';
 import 'package:lactosure_connect_app/services/pdf_service.dart';
 
 class DashboardPage extends StatefulWidget {
-  const DashboardPage({super.key});
+  const DashboardPage({super.key, this.showAppBar = true});
+
+  final bool showAppBar;
 
   @override
   State<DashboardPage> createState() => _DashboardPageState();
@@ -18,7 +24,7 @@ class _DashboardPageState extends State<DashboardPage> {
   Map<String, dynamic>? dashboard;
   bool isLoading = true;
   int touchedIndex = -1;
-
+  bool get isWebDesktop => kIsWeb && MediaQuery.of(context).size.width >= 1000;
   @override
   void initState() {
     super.initState();
@@ -74,26 +80,6 @@ class _DashboardPageState extends State<DashboardPage> {
     });
   }
 
-  Widget _legendItem(BuildContext context, Color color, String label) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4),
-      child: Row(
-        children: [
-          Container(
-            width: 12,
-            height: 12,
-            decoration: BoxDecoration(
-              color: color,
-              borderRadius: BorderRadius.circular(3),
-            ),
-          ),
-          const SizedBox(width: 8),
-          Text(label, style: Theme.of(context).textTheme.bodyMedium),
-        ],
-      ),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     if (isLoading) {
@@ -101,197 +87,250 @@ class _DashboardPageState extends State<DashboardPage> {
     }
 
     return Scaffold(
-      appBar: AppBar(
-        title: Text('Dashboard'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.download),
-            onPressed: () async {
-              if (dashboard == null) return;
-              showDialog(
-                context: context,
-                barrierDismissible: false,
-                builder: (_) => const Center(child: RotatingFlower()),
-              );
-              await AdminPdfService.generateAdminReport(dashboard: dashboard!);
+      appBar: widget.showAppBar
+          ? AppBar(
+              titleSpacing: 30,
+              title: LayoutBuilder(
+                builder: (context, constraints) {
+                  if (MediaQuery.of(context).size.width < 1000) {
+                    return const Text("Dashboard");
+                  }
 
-              if (context.mounted) {
-                Navigator.of(context).pop();
+                  return Row(
+                    children: [
+                      const Text("Dashboard"),
 
-                CustomSnackbar.show(
-                  context: context,
-                  message: "PDF downloaded successfully",
-                );
-              }
-            },
-          ),
-          IconButton(
-            icon: const Icon(Icons.bluetooth),
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (_) => Bledevice()),
-              );
-            },
-          ),
-          IconButton(
-            icon: const Icon(Icons.settings),
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (_) => Settings()),
-              );
-            },
-          ),
-        ],
-      ),
+                      const Spacer(),
 
+                      TextButton(
+                        onPressed: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(builder: (_) => UsersPage()),
+                          );
+                        },
+                        child: const Text("Users"),
+                      ),
+
+                      TextButton(
+                        onPressed: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(builder: (_) => SocietyPage()),
+                          );
+                        },
+                        child: const Text("Societies"),
+                      ),
+
+                      TextButton(
+                        onPressed: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(builder: (_) => MachineMaster()),
+                          );
+                        },
+                        child: const Text("Machines"),
+                      ),
+
+                      TextButton(
+                        onPressed: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(builder: (_) => Bledevice()),
+                          );
+                        },
+                        child: const Text("BLE"),
+                      ),
+
+                      IconButton(
+                        icon: const Icon(Icons.settings),
+                        onPressed: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(builder: (_) => Settings()),
+                          );
+                        },
+                      ),
+                    ],
+                  );
+                },
+              ),
+              actions: MediaQuery.of(context).size.width < 1000
+                  ? [
+                      IconButton(
+                        icon: const Icon(Icons.download),
+                        onPressed: () async {
+                          if (dashboard == null) return;
+                          showDialog(
+                            context: context,
+                            barrierDismissible: false,
+                            builder: (_) =>
+                                const Center(child: RotatingFlower()),
+                          );
+                          await AdminPdfService.generateAdminReport(
+                            dashboard: dashboard!,
+                          );
+
+                          if (context.mounted) {
+                            Navigator.of(context).pop();
+
+                            CustomSnackbar.show(
+                              context: context,
+                              message: "PDF downloaded successfully",
+                            );
+                          }
+                        },
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.bluetooth),
+                        onPressed: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(builder: (_) => Bledevice()),
+                          );
+                        },
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.settings),
+                        onPressed: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(builder: (_) => Settings()),
+                          );
+                        },
+                      ),
+                    ]
+                  : null,
+            )
+          : null,
       body: RefreshIndicator(
         onRefresh: loadDashboard,
         child: SingleChildScrollView(
           physics: const AlwaysScrollableScrollPhysics(),
-          padding: const EdgeInsets.all(15),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              GridView.count(
-                crossAxisCount: 2,
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                crossAxisSpacing: 12,
-                mainAxisSpacing: 12,
-                childAspectRatio: 1.1,
-                children: [
-                  _statCard(
-                    "Users",
-                    dashboard!["totalUsers"].toString(),
-                    Icons.people,
-                  ),
+          child: Padding(
+            padding: const EdgeInsets.all(15),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                LayoutBuilder(
+                  builder: (context, constraints) {
+                    bool desktop = constraints.maxWidth > 1000;
 
-                  _statCard(
-                    "Societies",
-                    dashboard!["totalSocieties"].toString(),
-                    Icons.business,
-                  ),
+                    return Column(
+                      children: [
+                        if (desktop)
+                          Align(
+                            alignment: Alignment.centerRight,
+                            child: IconButton(
+                              icon: const Icon(
+                                Icons.download,
+                                color: Color.fromARGB(255, 7, 218, 218),
+                              ),
+                              onPressed: () async {
+                                if (dashboard == null) return;
+                                showDialog(
+                                  context: context,
+                                  barrierDismissible: false,
+                                  builder: (_) =>
+                                      const Center(child: RotatingFlower()),
+                                );
+                                await AdminPdfService.generateAdminReport(
+                                  dashboard: dashboard!,
+                                );
 
-                  _statCard(
-                    "Machines",
-                    dashboard!["totalMachines"].toString(),
-                    Icons.precision_manufacturing,
-                  ),
+                                if (context.mounted) {
+                                  Navigator.of(context).pop();
 
-                  _statCard(
-                    "Models",
-                    dashboard!["totalMachineTypes"].toString(),
-                    Icons.category,
-                  ),
-                ],
-              ),
-
-              const SizedBox(height: 20),
-
-              Text(
-                "Top Societies",
-                style: Theme.of(context).textTheme.displaySmall,
-              ),
-
-              const SizedBox(height: 10),
-
-              Card(
-                color: Theme.of(context).colorScheme.primary,
-                child: ListView.separated(
-                  shrinkWrap: true,
-                  physics: const NeverScrollableScrollPhysics(),
-                  itemCount: (dashboard!["topSocieties"] as List).length,
-                  separatorBuilder: (_, __) => const Divider(height: 1),
-                  itemBuilder: (context, index) {
-                    final item = dashboard!["topSocieties"][index];
-
-                    return ListTile(
-                      leading: CircleAvatar(child: Text("${index + 1}")),
-                      title: Text(
-                        item["societyName"],
-                        style: Theme.of(context).textTheme.headlineLarge,
-                      ),
-                      subtitle: Text(
-                       item["societyId"],
-                        style: Theme.of(context).textTheme.labelMedium,
-                      ),
-                      trailing: Text(
-                        "${item["activeMachineCount"]} Machines",
-                        style: Theme.of(context).textTheme.labelLarge,
-                      ),
+                                  CustomSnackbar.show(
+                                    context: context,
+                                    message: "PDF downloaded successfully",
+                                  );
+                                }
+                              },
+                            ),
+                          ),
+                        GridView.count(
+                          crossAxisCount: desktop ? 4 : 2,
+                          shrinkWrap: true,
+                          physics: const NeverScrollableScrollPhysics(),
+                          crossAxisSpacing: 12,
+                          mainAxisSpacing: 12,
+                          childAspectRatio: desktop ? 1.6 : 1.1,
+                          children: [
+                            _statCard(
+                              "Users",
+                              dashboard!["totalUsers"].toString(),
+                              Icons.people,
+                            ),
+                            _statCard(
+                              "Societies",
+                              dashboard!["totalSocieties"].toString(),
+                              Icons.business,
+                            ),
+                            _statCard(
+                              "Machines",
+                              dashboard!["totalMachines"].toString(),
+                              Icons.precision_manufacturing,
+                            ),
+                            _statCard(
+                              "Models",
+                              dashboard!["totalMachineTypes"].toString(),
+                              Icons.category,
+                            ),
+                          ],
+                        ),
+                      ],
                     );
                   },
                 ),
-              ),
-              const SizedBox(height: 20),
 
-              Text(
-                "System Overview",
-                style: Theme.of(context).textTheme.displaySmall,
-              ),
+                const SizedBox(height: 20),
 
-              const SizedBox(height: 10),
-              SingleChildScrollView(
-                scrollDirection: Axis.horizontal,
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    if (touchedIndex != -1) _buildDetails(),
-                
-                    const SizedBox(height: 20),
-                
-                    Wrap(
-                      spacing: 16,
-                      runSpacing: 8,
-                      children: _pieData.map((item) {
-                        return _legendItem(
-                          context,
-                          item["color"] as Color,
-                          item["title"] as String,
-                        );
-                      }).toList(),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 10),
-              SizedBox(
-                height: 250,
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Expanded(
-                      flex: 3,
-                      child: PieChart(
-                        PieChartData(
-                          centerSpaceRadius: 50,
-                          sectionsSpace: 3,
-                          pieTouchData: PieTouchData(
-                            touchCallback: (event, response) {
-                              setState(() {
-                                if (!event.isInterestedForInteractions ||
-                                    response == null ||
-                                    response.touchedSection == null) {
-                                  touchedIndex = -1;
-                                  return;
-                                }
+                LayoutBuilder(
+                  builder: (context, constraints) {
+                    bool desktop = constraints.maxWidth > 1000;
 
-                                touchedIndex = response
-                                    .touchedSection!
-                                    .touchedSectionIndex;
-                              });
-                            },
+                    if (!desktop) {
+                      return Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          _topSocietiesWidget(),
+                          const SizedBox(height: 20),
+                          Text(
+                            "System Overview",
+                            style: Theme.of(context).textTheme.displaySmall,
                           ),
-                          sections: _pieSections(),
+                          const SizedBox(height: 10),
+                          _systemOverviewWidget(),
+                        ],
+                      );
+                    }
+
+                    return Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Expanded(flex: 2, child: _topSocietiesWidget()),
+                        const SizedBox(width: 20),
+                        Expanded(
+                          flex: 3,
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                "System Overview",
+                                style: Theme.of(context).textTheme.displaySmall,
+                              ),
+                              const SizedBox(height: 10),
+                              _systemOverviewWidget(),
+                            ],
+                          ),
                         ),
-                      ),
-                    ),
-                  ],
+                      ],
+                    );
+                  },
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),
@@ -397,6 +436,118 @@ class _DashboardPageState extends State<DashboardPage> {
           ],
         ),
       ),
+    );
+  }
+
+  Widget _topSocietiesWidget() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text("Top Societies", style: Theme.of(context).textTheme.displaySmall),
+        const SizedBox(height: 10),
+
+        Card(
+          color: Theme.of(context).colorScheme.primary,
+          child: ListView.separated(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            itemCount: (dashboard!["topSocieties"] as List).length,
+            separatorBuilder: (_, __) => const Divider(height: 1),
+            itemBuilder: (context, index) {
+              final item = dashboard!["topSocieties"][index];
+
+              return ListTile(
+                leading: CircleAvatar(child: Text("${index + 1}")),
+                title: Text(
+                  item["societyName"],
+                  style: Theme.of(context).textTheme.headlineLarge,
+                ),
+                subtitle: Text(
+                  item["societyId"],
+                  style: Theme.of(context).textTheme.labelMedium,
+                ),
+                trailing: Text(
+                  "${item["activeMachineCount"]} Machines",
+                  style: Theme.of(context).textTheme.labelLarge,
+                ),
+              );
+            },
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _systemOverviewWidget() {
+    return Card(
+      color: Theme.of(context).colorScheme.primary,
+      child: Padding(
+        padding: const EdgeInsets.all(15),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            if (touchedIndex != -1) _buildDetails(),
+
+            Wrap(
+              spacing: 20,
+              runSpacing: 10,
+              alignment: WrapAlignment.center,
+              children: _pieData.map((item) {
+                return _legendItem(
+                  context,
+                  item["color"] as Color,
+                  item["title"] as String,
+                );
+              }).toList(),
+            ),
+            const SizedBox(height: 15),
+
+            SizedBox(
+              height: 250,
+              child: PieChart(
+                PieChartData(
+                  centerSpaceRadius: 50,
+                  sectionsSpace: 3,
+                  pieTouchData: PieTouchData(
+                    touchCallback: (event, response) {
+                      setState(() {
+                        if (!event.isInterestedForInteractions ||
+                            response == null ||
+                            response.touchedSection == null) {
+                          touchedIndex = -1;
+                          return;
+                        }
+
+                        touchedIndex =
+                            response.touchedSection!.touchedSectionIndex;
+                      });
+                    },
+                  ),
+                  sections: _pieSections(),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _legendItem(BuildContext context, Color color, String label) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Container(
+          width: 12,
+          height: 12,
+          decoration: BoxDecoration(
+            color: color,
+            borderRadius: BorderRadius.circular(3),
+          ),
+        ),
+        const SizedBox(width: 6),
+        Text(label, style: Theme.of(context).textTheme.bodyMedium),
+      ],
     );
   }
 }

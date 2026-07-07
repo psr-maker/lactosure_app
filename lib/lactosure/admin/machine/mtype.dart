@@ -4,8 +4,13 @@ import 'package:lactosure_connect_app/services/adminservice.dart';
 
 class MachineTypePage extends StatefulWidget {
   final String searchText;
+  final bool showAppBar;
 
-  const MachineTypePage({super.key, required this.searchText});
+  const MachineTypePage({
+    super.key,
+    required this.searchText,
+    this.showAppBar = true,
+  });
 
   @override
   State<MachineTypePage> createState() => _MachineTypePageState();
@@ -303,15 +308,152 @@ class _MachineTypePageState extends State<MachineTypePage> {
   @override
   Widget build(BuildContext context) {
     final total = machineTypes.length;
-
     final active = machineTypes.where((e) => e["status"] == true).length;
-
     final inactive = machineTypes.where((e) => e["status"] == false).length;
     final filteredMachineTypes = machineTypes.where((m) {
       return m["mType"].toString().toLowerCase().contains(
         widget.searchText.toLowerCase(),
       );
     }).toList();
+
+    // Dashboard View
+    if (!widget.showAppBar) {
+      return Padding(
+        padding: const EdgeInsets.all(10),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            SizedBox(height: 10),
+            Row(
+              children: [
+                Text(
+                  "All Machines Model",
+                  style: Theme.of(context).textTheme.headlineMedium,
+                ),
+
+                const Spacer(),
+                SizedBox(
+                  width: 250,
+                  child: TextField(
+                    onChanged: (value) {},
+                    style: Theme.of(context).textTheme.titleMedium,
+                    decoration: InputDecoration(
+                      hintText: "Search Models",
+                      hintStyle: Theme.of(context).textTheme.titleMedium,
+                      prefixIcon: Icon(
+                        Icons.search,
+                        color: Theme.of(context).colorScheme.onPrimary,
+                      ),
+                      border: InputBorder.none,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 20),
+                ElevatedButton.icon(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Theme.of(context).colorScheme.background,
+                    foregroundColor: Theme.of(context).colorScheme.onPrimary,
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 15,
+                      vertical: 15,
+                    ),
+                  ),
+                  onPressed: _showAddMachineTypeDialog,
+                  icon: const Icon(Icons.add),
+                  label: const Text("Add Model"),
+                ),
+              ],
+            ),
+            const SizedBox(height: 15),
+            // Total Card Row
+            Row(
+              children: [
+                Expanded(
+                  child: _buildStatCard("Total", total.toString(), Colors.blue),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: _buildStatCard(
+                    "Active",
+                    active.toString(),
+                    Colors.green,
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: _buildStatCard(
+                    "Inactive",
+                    inactive.toString(),
+                    Colors.red,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 15),
+            Text(
+              "Model List",
+              style: Theme.of(context).textTheme.headlineLarge,
+            ),
+            const SizedBox(height: 15),
+
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+              decoration: BoxDecoration(
+                color: Theme.of(context).colorScheme.secondary,
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Row(
+                children: [
+                  Expanded(
+                    flex: 1,
+                    child: Text(
+                      "Machine Type",
+                      style: Theme.of(context).textTheme.bodyLarge,
+                    ),
+                  ),
+                  Expanded(
+                    flex: 1,
+                    child: Text(
+                      "Society",
+                      style: Theme.of(context).textTheme.bodyLarge,
+                    ),
+                  ),
+
+                  Expanded(
+                    flex: 1,
+                    child: Text(
+                      "Edit",
+                      style: Theme.of(context).textTheme.bodyLarge,
+                    ),
+                  ),
+
+                  Expanded(
+                    flex: 1,
+                    child: Text(
+                      "Delete",
+                      style: Theme.of(context).textTheme.bodyLarge,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+
+            const SizedBox(height: 8),
+
+            Expanded(
+              child: ListView.builder(
+                itemCount: filteredMachineTypes.length,
+                itemBuilder: (context, index) {
+                  return desktopRow(filteredMachineTypes[index]);
+                },
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    // Mobile View
     return Padding(
       padding: const EdgeInsets.all(10),
       child: Column(
@@ -440,6 +582,60 @@ class _MachineTypePageState extends State<MachineTypePage> {
           ),
           SizedBox(height: 5),
           Text(title, style: Theme.of(context).textTheme.titleMedium),
+        ],
+      ),
+    );
+  }
+
+  Widget desktopRow(dynamic model) {
+    return Container(
+      height: 60,
+      padding: const EdgeInsets.symmetric(horizontal: 20),
+      decoration: BoxDecoration(
+        border: Border(
+          bottom: BorderSide(color: Colors.grey.shade300, width: 1),
+        ),
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: Text(
+              model["mType"]?.toString() ?? "",
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+
+          Expanded(
+            child: Text(
+              model["status"] == true ? "Active" : "Inactive",
+              style: TextStyle(
+                color: model["status"] == true
+                    ? Theme.of(context).colorScheme.tertiary
+                    : Theme.of(context).colorScheme.error,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ),
+
+          Expanded(
+            child: IconButton(
+              icon: Icon(
+                Icons.edit,
+                color: Theme.of(context).colorScheme.onTertiary,
+              ),
+              onPressed: () => _showEditMachineTypeDialog(model),
+            ),
+          ),
+
+          Expanded(
+            flex: 2,
+            child: Center(
+              child: IconButton(
+                icon: const Icon(Icons.delete, color: Colors.red),
+                onPressed: () => _deleteMachineType(model),
+              ),
+            ),
+          ),
         ],
       ),
     );

@@ -3,7 +3,9 @@ import 'package:lactosure_connect_app/lactosure/admin/machine/machine.dart';
 import 'package:lactosure_connect_app/lactosure/admin/machine/mtype.dart';
 
 class MachineMaster extends StatefulWidget {
-  const MachineMaster({super.key});
+  const MachineMaster({super.key, this.showAppBar = true});
+
+  final bool showAppBar;
 
   @override
   State<MachineMaster> createState() => _MachineMasterState();
@@ -44,6 +46,46 @@ class _MachineMasterState extends State<MachineMaster>
 
   @override
   Widget build(BuildContext context) {
+    final tabBar = TabBar(
+      controller: _tabController,
+      labelColor: Theme.of(context).colorScheme.onPrimary,
+      unselectedLabelColor: Theme.of(context).colorScheme.onSecondary,
+      indicatorColor: Theme.of(context).colorScheme.onPrimary,
+      indicatorWeight: 3,
+      labelStyle: Theme.of(context).textTheme.titleMedium,
+      unselectedLabelStyle: Theme.of(context).textTheme.titleMedium,
+      tabs: const [
+        Tab(text: "Machine"),
+        Tab(text: "Machine Type"),
+      ],
+    );
+
+    // Dashboard View
+    if (!widget.showAppBar) {
+      return Scaffold(
+        body: Column(
+          children: [
+            // TabBar
+            Container(
+              color: Theme.of(context).colorScheme.primary,
+              child: tabBar,
+            ),
+            // TabBar View
+            Expanded(
+              child: TabBarView(
+                controller: _tabController,
+                children: [
+                  MachinePage(searchText: searchText, showAppBar: widget.showAppBar),
+                  MachineTypePage(searchText: searchText, showAppBar: widget.showAppBar),
+                ],
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    // Mobile View
     return Scaffold(
       appBar: AppBar(
         title: isSearching
@@ -63,7 +105,6 @@ class _MachineMasterState extends State<MachineMaster>
                 },
               )
             : Text(title),
-
         actions: [
           IconButton(
             icon: Icon(isSearching ? Icons.close : Icons.search),
@@ -73,33 +114,22 @@ class _MachineMasterState extends State<MachineMaster>
 
                 if (!isSearching) {
                   searchController.clear();
-
                   searchText = "";
                 }
               });
             },
           ),
         ],
-
-        bottom: TabBar(
-          controller: _tabController,
-          labelColor: Theme.of(context).colorScheme.onPrimary,
-          unselectedLabelColor:Theme.of(context).colorScheme.onSecondary,
-          indicatorColor: Theme.of(context).colorScheme.onPrimary,
-          indicatorWeight: 3,
-          labelStyle: Theme.of(context).textTheme.titleMedium,
-          unselectedLabelStyle: Theme.of(context).textTheme.titleMedium,
-          tabs: const [
-            Tab(text: "Machine"),
-            Tab(text: "Machine Type"),
-          ],
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(kToolbarHeight),
+          child: tabBar,
         ),
       ),
       body: TabBarView(
         controller: _tabController,
         children: [
-          MachinePage(searchText: searchText),
-          MachineTypePage(searchText: searchText),
+          MachinePage(searchText: searchText, showAppBar: widget.showAppBar),
+          MachineTypePage(searchText: searchText, showAppBar: widget.showAppBar),
         ],
       ),
     );

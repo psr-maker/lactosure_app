@@ -27,7 +27,6 @@ class MyApp extends StatelessWidget {
                 : ThemeMode.light,
             home: const SplashScreen(),
             // home: const AdminScreen(),
-            // home: Dashboardhome(),
           );
         },
       ),

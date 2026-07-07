@@ -5,8 +5,13 @@ import 'package:lactosure_connect_app/services/adminservice.dart';
 
 class MachinePage extends StatefulWidget {
   final String searchText;
+  final bool showAppBar;
 
-  const MachinePage({super.key, required this.searchText});
+  const MachinePage({
+    super.key,
+    required this.searchText,
+    this.showAppBar = true,
+  });
 
   @override
   State<MachinePage> createState() => _MachinePageState();
@@ -16,6 +21,7 @@ class _MachinePageState extends State<MachinePage> {
   List machines = [];
   List societies = [];
   List machineTypes = [];
+  final TextEditingController searchController = TextEditingController();
 
   bool isLoading = true;
   @override
@@ -519,9 +525,7 @@ class _MachinePageState extends State<MachinePage> {
   @override
   Widget build(BuildContext context) {
     final total = machines.length;
-
     final active = machines.where((e) => e["status"] == true).length;
-
     final inactive = machines.where((e) => e["status"] == false).length;
     final filteredMachines = machines.where((m) {
       return m["machineCode"].toString().toLowerCase().contains(
@@ -534,6 +538,160 @@ class _MachinePageState extends State<MachinePage> {
             widget.searchText.toLowerCase(),
           );
     }).toList();
+
+    // Dashboard View
+    if (!widget.showAppBar) {
+      return Padding(
+        padding: const EdgeInsets.all(10),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            SizedBox(height: 10),
+            Row(
+              children: [
+                Text(
+                  "All Machines",
+                  style: Theme.of(context).textTheme.headlineMedium,
+                ),
+
+                const Spacer(),
+                SizedBox(
+                  width: 250,
+                  child: TextField(
+                    onChanged: (value) {},
+                    style: Theme.of(context).textTheme.titleMedium,
+                    decoration: InputDecoration(
+                      hintText: "Search Machines",
+                      hintStyle: Theme.of(context).textTheme.titleMedium,
+                      prefixIcon: Icon(
+                        Icons.search,
+                        color: Theme.of(context).colorScheme.onPrimary,
+                      ),
+                      border: InputBorder.none,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 20),
+                ElevatedButton.icon(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Theme.of(context).colorScheme.background,
+                    foregroundColor: Theme.of(context).colorScheme.onPrimary,
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 15,
+                      vertical: 15,
+                    ),
+                  ),
+                  onPressed: _showAddMachineDialog,
+                  icon: const Icon(Icons.add),
+                  label: const Text("Add Machines"),
+                ),
+              ],
+            ),
+            // Total Card Row
+            const SizedBox(height: 15),
+            Row(
+              children: [
+                Expanded(
+                  child: _buildStatCard("Total", total.toString(), Colors.blue),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: _buildStatCard(
+                    "Active",
+                    active.toString(),
+                    Colors.green,
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: _buildStatCard(
+                    "Inactive",
+                    inactive.toString(),
+                    Colors.red,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 15),
+            Text(
+              "Machine List",
+              style: Theme.of(context).textTheme.headlineLarge,
+            ),
+            const SizedBox(height: 15),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+              decoration: BoxDecoration(
+                color: Theme.of(context).colorScheme.secondary,
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Row(
+                children: [
+                  Expanded(
+                    flex: 1,
+                    child: Text(
+                      "Machine Code",
+                      style: Theme.of(context).textTheme.bodyLarge,
+                    ),
+                  ),
+
+                  Expanded(
+                    flex: 1,
+                    child: Text(
+                      "Machine Type",
+                      style: Theme.of(context).textTheme.bodyLarge,
+                    ),
+                  ),
+                  Expanded(
+                    flex: 1,
+                    child: Text(
+                      "Society",
+                      style: Theme.of(context).textTheme.bodyLarge,
+                    ),
+                  ),
+                  Expanded(
+                    flex: 1,
+                    child: Text(
+                      "Status",
+                      style: Theme.of(context).textTheme.bodyLarge,
+                    ),
+                  ),
+
+                  Expanded(
+                    flex: 1,
+                    child: Text(
+                      "Edit",
+                      style: Theme.of(context).textTheme.bodyLarge,
+                    ),
+                  ),
+
+                  Expanded(
+                    flex: 1,
+                    child: Text(
+                      "Delete",
+                      style: Theme.of(context).textTheme.bodyLarge,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+
+            const SizedBox(height: 8),
+
+            Expanded(
+              child: ListView.builder(
+                itemCount: filteredMachines.length,
+                itemBuilder: (context, index) {
+                  return desktopRow(filteredMachines[index]);
+                },
+              ),
+            ),
+          
+          ],
+        ),
+      );
+    }
+
+    // Mobile View
     return Padding(
       padding: const EdgeInsets.all(10),
       child: Column(
@@ -709,6 +867,68 @@ class _MachinePageState extends State<MachinePage> {
           ),
           SizedBox(height: 5),
           Text(title, style: Theme.of(context).textTheme.titleMedium),
+        ],
+      ),
+    );
+  }
+
+  Widget desktopRow(dynamic machine) {
+    return Container(
+      height: 60,
+      padding: const EdgeInsets.symmetric(horizontal: 20),
+      decoration: BoxDecoration(
+        border: Border(
+          bottom: BorderSide(color: Colors.grey.shade300, width: 1),
+        ),
+      ),
+      child: Row(
+        children: [
+          Expanded(child: Text(machine["machineCode"] ?? "")),
+
+          Expanded(
+            child: Text(
+              machine["machineType"]?.toString() ?? "",
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+          Expanded(
+            child: Text(
+              machine["societyName"]?.toString() ?? "",
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+          Expanded(
+            child: Text(
+              machine["status"] == true ? "Active" : "Inactive",
+              style: TextStyle(
+                color: machine["status"] == true
+                    ? Theme.of(context).colorScheme.tertiary
+                    : Theme.of(context).colorScheme.error,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ),
+
+          Expanded(
+            flex: 1,
+            child: IconButton(
+              icon: Icon(
+                Icons.edit,
+                color: Theme.of(context).colorScheme.onTertiary,
+              ),
+              onPressed: () => _showEditMachineDialog(machine),
+            ),
+          ),
+
+          Expanded(
+            flex: 1,
+            child: Center(
+              child: IconButton(
+                icon: const Icon(Icons.delete, color: Colors.red),
+                onPressed: () => _deleteMachine(machine),
+              ),
+            ),
+          ),
         ],
       ),
     );

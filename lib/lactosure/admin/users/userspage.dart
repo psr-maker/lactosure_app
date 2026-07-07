@@ -5,7 +5,9 @@ import 'package:lactosure_connect_app/lactosure/widgets/custom_button.dart';
 import 'package:lactosure_connect_app/services/authen_service.dart';
 
 class UsersPage extends StatefulWidget {
-  const UsersPage({super.key});
+  const UsersPage({super.key, this.showAppBar = true});
+
+  final bool showAppBar;
 
   @override
   State<UsersPage> createState() => _UsersPageState();
@@ -19,7 +21,7 @@ class _UsersPageState extends State<UsersPage>
 
   bool isLoading = true;
   bool isSearching = false;
-
+  String selectedFilter = "All";
   late TabController tabController;
   TextEditingController searchController = TextEditingController();
 
@@ -114,59 +116,51 @@ class _UsersPageState extends State<UsersPage>
     }
   }
 
+  List<dynamic> getFilteredUsers() {
+    List<dynamic> users = List.from(allUsers);
+
+    // Search
+    if (searchController.text.isNotEmpty) {
+      final query = searchController.text.toLowerCase();
+
+      users = users.where((user) {
+        return (user["name"] ?? "").toString().toLowerCase().contains(query) ||
+            (user["email"] ?? "").toString().toLowerCase().contains(query);
+      }).toList();
+    }
+
+    // Status Filter
+    if (selectedFilter == "Active") {
+      users = users.where((u) => u["status"] == true).toList();
+    } else if (selectedFilter == "Pending") {
+      users = users.where((u) => u["status"] == false).toList();
+    }
+
+    return users;
+  }
+
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: isSearching
-            ? TextField(
-                controller: searchController,
-                style: Theme.of(context).textTheme.titleMedium,
-                onChanged: filterSearch,
-                decoration: InputDecoration(
-                  hintText: "Search users...",
-                  hintStyle: Theme.of(context).textTheme.titleMedium,
-                  border: InputBorder.none,
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final isDesktop = constraints.maxWidth >= 1000;
+
+        return Scaffold(
+          appBar: widget.showAppBar ? _buildAppBar(isDesktop) : null,
+
+          body: isLoading
+              ? const Center(child: RotatingFlower())
+              : isDesktop
+              ? buildDesktopList(getFilteredUsers())
+              : TabBarView(
+                  controller: tabController,
+                  children: [
+                    buildList(getApproved(), "approved"),
+                    buildList(getPending(), "pending"),
+                  ],
                 ),
-              )
-            : const Text("Users"),
-        actions: [
-          IconButton(
-            icon: Icon(isSearching ? Icons.close : Icons.search),
-            onPressed: () {
-              setState(() {
-                isSearching = !isSearching;
-                searchController.clear();
-                filteredUsers = allUsers;
-              });
-            },
-          ),
-        ],
-        bottom: TabBar(
-          controller: tabController,
-          labelColor: Theme.of(context).colorScheme.onPrimary,
-          unselectedLabelColor: Theme.of(context).colorScheme.onSecondary,
-          indicatorColor: Theme.of(context).colorScheme.onPrimary,
-          indicatorWeight: 3,
-          labelStyle: Theme.of(context).textTheme.titleMedium,
-          unselectedLabelStyle: Theme.of(context).textTheme.titleMedium,
-
-          tabs: const [
-            Tab(text: "Approved"),
-            Tab(text: "Pending"),
-          ],
-        ),
-      ),
-
-      body: isLoading
-          ? const Center(child: RotatingFlower())
-          : TabBarView(
-              controller: tabController,
-              children: [
-                buildList(getApproved(), "approved"),
-                buildList(getPending(), "pending"),
-              ],
-            ),
+        );
+      },
     );
   }
 
@@ -381,6 +375,244 @@ class _UsersPageState extends State<UsersPage>
           );
         },
       ),
+    );
+  }
+
+  Widget buildDesktopList(List<dynamic> users) {
+    return Padding(
+      padding: const EdgeInsets.all(20),
+      child: Column(
+        children: [
+          /// Top Bar
+          Row(
+            children: [
+              Text(
+                "All Users",
+                style: Theme.of(context).textTheme.headlineMedium,
+              ),
+
+              const Spacer(),
+
+              SizedBox(
+                width: 250,
+                child: TextField(
+                  controller: searchController,
+                  style: Theme.of(context).textTheme.titleMedium,
+                  decoration: InputDecoration(
+                    hintText: "Search users",
+                    hintStyle: Theme.of(context).textTheme.titleMedium,
+                    border: InputBorder.none,
+                    prefixIcon: Icon(
+                      Icons.search,
+                      color: Theme.of(context).colorScheme.onPrimary,
+                    ),
+                  ),
+                  onChanged: (value) {
+                    setState(() {});
+                  },
+                ),
+              ),
+
+              const SizedBox(width: 20),
+
+              DropdownButton<String>(
+                value: selectedFilter,
+                dropdownColor: Theme.of(context).colorScheme.primary,
+                items: const [
+                  DropdownMenuItem(value: "All", child: Text("All")),
+                  DropdownMenuItem(value: "Active", child: Text("Active")),
+                  DropdownMenuItem(value: "Pending", child: Text("Pending")),
+                ],
+                onChanged: (value) {
+                  setState(() {
+                    selectedFilter = value!;
+                  });
+                },
+              ),
+            ],
+          ),
+
+          const SizedBox(height: 20),
+
+          /// Header
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+            decoration: BoxDecoration(
+              color: Theme.of(context).colorScheme.secondary,
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Row(
+              children: [
+                Expanded(
+                  flex: 1,
+                  child: Text(
+                    "Name",
+                    style: Theme.of(context).textTheme.bodyLarge,
+                  ),
+                ),
+
+                Expanded(
+                  flex: 1,
+                  child: Text(
+                    "Email",
+                    style: Theme.of(context).textTheme.bodyLarge,
+                  ),
+                ),
+
+                Expanded(
+                  flex: 1,
+                  child: Text(
+                    "Status",
+                    style: Theme.of(context).textTheme.bodyLarge,
+                  ),
+                ),
+
+                Expanded(
+                  flex: 1,
+                  child: Text(
+                    "Face",
+                    style: Theme.of(context).textTheme.bodyLarge,
+                  ),
+                ),
+
+                Expanded(
+                  flex: 1,
+                  child: Text(
+                    "Action",
+                    style: Theme.of(context).textTheme.bodyLarge,
+                  ),
+                ),
+              ],
+            ),
+          ),
+
+          const SizedBox(height: 8),
+
+          Expanded(
+            child: ListView.builder(
+              itemCount: users.length,
+              itemBuilder: (context, index) {
+                return desktopRow(users[index]);
+              },
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget desktopRow(dynamic user) {
+    final bool approved = user["status"] == true;
+
+    return Container(
+      height: 60,
+      padding: const EdgeInsets.symmetric(horizontal: 20),
+      decoration: BoxDecoration(
+        border: Border(
+          bottom: BorderSide(color: Colors.grey.shade300, width: 1),
+        ),
+      ),
+      child: Row(
+        children: [
+          Expanded(child: Text(user["name"] ?? "")),
+
+          Expanded(
+            flex: 2,
+            child: Text(user["email"] ?? "", overflow: TextOverflow.ellipsis),
+          ),
+
+          Expanded(
+            child: Text(
+              approved ? "Active" : "Pending",
+              style: TextStyle(
+                color: approved ? Colors.green : Colors.orange,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+
+          Expanded(
+            child: approved
+                ? IconButton(
+                    icon: const Icon(Icons.tag_faces),
+                    color: Colors.blue,
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => FaceEnrollment(
+                            userId: user["uId"],
+                            userName: user["name"],
+                          ),
+                        ),
+                      );
+                    },
+                  )
+                : const Text("-"),
+          ),
+
+          Expanded(
+            flex: 2,
+            child: Center(
+              child: IconButton(
+                icon: const Icon(Icons.delete, color: Colors.red),
+                onPressed: () {
+                  deleteUser(user["uId"]);
+                },
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  PreferredSizeWidget _buildAppBar(bool isDesktop) {
+    return AppBar(
+      title: isSearching
+          ? TextField(
+              controller: searchController,
+              style: Theme.of(context).textTheme.titleMedium,
+              onChanged: filterSearch,
+              decoration: InputDecoration(
+                hintText: "Search users...",
+                hintStyle: Theme.of(context).textTheme.titleMedium,
+                border: InputBorder.none,
+              ),
+            )
+          : const Text("Users"),
+
+      actions: isDesktop
+          ? []
+          : [
+              IconButton(
+                icon: Icon(isSearching ? Icons.close : Icons.search),
+                onPressed: () {
+                  setState(() {
+                    isSearching = !isSearching;
+                    searchController.clear();
+                    filteredUsers = allUsers;
+                  });
+                },
+              ),
+            ],
+
+      bottom: isDesktop
+          ? null
+          : TabBar(
+              controller: tabController,
+              labelColor: Theme.of(context).colorScheme.onPrimary,
+              unselectedLabelColor: Theme.of(context).colorScheme.onSecondary,
+              indicatorColor: Theme.of(context).colorScheme.onPrimary,
+              indicatorWeight: 3,
+              labelStyle: Theme.of(context).textTheme.titleMedium,
+              unselectedLabelStyle: Theme.of(context).textTheme.titleMedium,
+
+              tabs: const [
+                Tab(text: "Approved"),
+                Tab(text: "Pending"),
+              ],
+            ),
     );
   }
 }
